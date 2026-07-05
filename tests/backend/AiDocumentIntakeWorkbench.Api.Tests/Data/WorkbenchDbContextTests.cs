@@ -14,6 +14,9 @@ public sealed class WorkbenchDbContextTests
         Assert.NotNull(context.Model.FindEntityType(typeof(IntakeDocument)));
         Assert.NotNull(context.Model.FindEntityType(typeof(ReviewState)));
         Assert.NotNull(context.Model.FindEntityType(typeof(AuditEvent)));
+        Assert.NotNull(context.Model.FindEntityType(typeof(DocumentProcessingResult)));
+        Assert.NotNull(context.Model.FindEntityType(typeof(ExtractedDocumentField)));
+        Assert.NotNull(context.Model.FindEntityType(typeof(ValidationFlag)));
     }
 
     [Fact]

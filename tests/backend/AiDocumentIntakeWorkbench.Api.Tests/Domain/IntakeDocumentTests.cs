@@ -36,6 +36,31 @@ public sealed class IntakeDocumentTests
     }
 
     [Fact]
+    public void ChangeStatus_UpdatesStatusAndTimestamp()
+    {
+        var document = new IntakeDocument("Sample");
+        var originalUpdatedUtc = document.UpdatedUtc;
+
+        var changed = document.ChangeStatus(WorkflowStatus.AwaitingReview);
+
+        Assert.True(changed);
+        Assert.Equal(WorkflowStatus.AwaitingReview, document.Status);
+        Assert.True(document.UpdatedUtc >= originalUpdatedUtc);
+    }
+
+    [Fact]
+    public void ChangeStatus_ReturnsFalseWhenStatusIsUnchanged()
+    {
+        var document = new IntakeDocument("Sample");
+        var originalUpdatedUtc = document.UpdatedUtc;
+
+        var changed = document.ChangeStatus(WorkflowStatus.Received);
+
+        Assert.False(changed);
+        Assert.Equal(originalUpdatedUtc, document.UpdatedUtc);
+    }
+
+    [Fact]
     public void Constructor_RejectsMissingDisplayName()
     {
         Assert.Throws<ArgumentException>(() => new IntakeDocument(" "));

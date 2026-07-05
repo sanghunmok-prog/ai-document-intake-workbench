@@ -1,5 +1,6 @@
 using AiDocumentIntakeWorkbench.Api.Api;
 using AiDocumentIntakeWorkbench.Api.Ai;
+using AiDocumentIntakeWorkbench.Api.AiProcessing;
 using AiDocumentIntakeWorkbench.Api.Data;
 using AiDocumentIntakeWorkbench.Api.Intake;
 using AiDocumentIntakeWorkbench.Api.SampleDocuments;
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<WorkbenchDbContext>(options =>
 builder.Services.AddSingleton<ISampleDocumentCatalog, InMemorySampleDocumentCatalog>();
 builder.Services.AddSingleton<IDocumentAiProcessor, DeterministicMockDocumentAiProcessor>();
 builder.Services.AddScoped<IntakeDocumentService>();
+builder.Services.AddScoped<AiProcessingService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalFrontend", policy =>
@@ -40,5 +42,6 @@ app.MapGet("/health", () =>
 });
 app.MapSampleDocumentEndpoints();
 app.MapIntakeDocumentEndpoints();
+app.MapAiProcessingEndpoints();
 
 app.Run();

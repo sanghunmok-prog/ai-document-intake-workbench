@@ -53,6 +53,18 @@ public sealed class IntakeDocument
 
     public IReadOnlyCollection<AuditEvent> AuditEvents => _auditEvents;
 
+    public bool ChangeStatus(WorkflowStatus status)
+    {
+        if (Status == status)
+        {
+            return false;
+        }
+
+        Status = status;
+        UpdatedUtc = DateTime.UtcNow;
+        return true;
+    }
+
     private static string? NormalizeOptional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
