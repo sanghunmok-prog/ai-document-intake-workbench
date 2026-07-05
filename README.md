@@ -4,9 +4,7 @@ AI Document Intake Workbench is a planned full-stack workflow application for AI
 
 ## Current Status
 
-PR00 establishes the public-safe documentation foundation only. Product implementation has not started, and no backend or frontend projects exist yet.
-
-Local run instructions will be added after backend and frontend projects are created in later PRs.
+PR01 adds minimal runnable backend and frontend application shells. Product workflow behavior has not been implemented yet.
 
 ## Planned Stack
 
@@ -15,6 +13,41 @@ Local run instructions will be added after backend and frontend projects are cre
 - SQL Server
 - Entity Framework Core
 - REST APIs
+
+## Local Shell Development
+
+Prerequisites:
+
+- .NET SDK
+- Node.js and npm
+
+Restore and build the backend solution:
+
+```bash
+dotnet restore ./AiDocumentIntakeWorkbench.sln
+dotnet build ./AiDocumentIntakeWorkbench.sln --no-restore
+```
+
+Run the backend API shell:
+
+```bash
+dotnet run --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj --launch-profile http
+```
+
+The health endpoint is available at `http://localhost:5080/health` when the `http` launch profile is running.
+
+Install, build, and run the frontend shell:
+
+```bash
+cd src/frontend/ai-document-intake-workbench-web
+npm install
+npm run build
+npm start
+```
+
+The frontend development server is available at `http://localhost:4200/` by default.
+
+These commands run only the PR01 shells. Document intake, AI processing, validation, review, and audit workflow behavior will be added in later PRs.
 
 ## Intended Workflow
 

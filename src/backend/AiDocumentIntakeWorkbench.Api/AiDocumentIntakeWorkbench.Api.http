@@ -1,0 +1,6 @@
+@AiDocumentIntakeWorkbench.Api_HostAddress = http://localhost:5080
+
+GET {{AiDocumentIntakeWorkbench.Api_HostAddress}}/health
+Accept: application/json
+
+###
