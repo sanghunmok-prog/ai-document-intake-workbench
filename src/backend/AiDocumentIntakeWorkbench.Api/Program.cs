@@ -1,4 +1,5 @@
 using AiDocumentIntakeWorkbench.Api.Api;
+using AiDocumentIntakeWorkbench.Api.Ai;
 using AiDocumentIntakeWorkbench.Api.Data;
 using AiDocumentIntakeWorkbench.Api.Intake;
 using AiDocumentIntakeWorkbench.Api.SampleDocuments;
@@ -12,6 +13,7 @@ builder.Services.AddDbContext<WorkbenchDbContext>(options =>
     options.UseSqlServer(WorkbenchDbContext.ResolveConnectionString(workbenchDbConnectionString));
 });
 builder.Services.AddSingleton<ISampleDocumentCatalog, InMemorySampleDocumentCatalog>();
+builder.Services.AddSingleton<IDocumentAiProcessor, DeterministicMockDocumentAiProcessor>();
 builder.Services.AddScoped<IntakeDocumentService>();
 builder.Services.AddCors(options =>
 {

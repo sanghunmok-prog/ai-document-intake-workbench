@@ -5,7 +5,7 @@ public sealed class InMemorySampleDocumentCatalog : ISampleDocumentCatalog
     private static readonly IReadOnlyList<SampleDocument> Samples =
     [
         new(
-            "clean-high-confidence",
+            SampleDocumentIds.CleanHighConfidence,
             "Vendor invoice with complete remittance details",
             "Complete invoice scenario",
             "A vendor invoice includes a clear supplier, invoice number, total, due date, and payment instructions.",
@@ -19,7 +19,7 @@ public sealed class InMemorySampleDocumentCatalog : ISampleDocumentCatalog
             Payment instructions: ACH to Northwind Office Supply, reference INV-10482.
             """),
         new(
-            "missing-low-confidence",
+            SampleDocumentIds.MissingLowConfidence,
             "Service request with missing account reference",
             "Incomplete service request scenario",
             "A service request includes useful business context but omits the customer account reference.",
@@ -32,7 +32,7 @@ public sealed class InMemorySampleDocumentCatalog : ISampleDocumentCatalog
             Notes: The reader works intermittently and blocks employee entry during peak hours.
             """),
         new(
-            "conflicting-inconsistent",
+            SampleDocumentIds.ConflictingInconsistent,
             "Purchase order with inconsistent totals",
             "Conflicting purchase order scenario",
             "A purchase order includes line items whose subtotal does not match the stated order total.",
