@@ -32,6 +32,52 @@ export interface ReviewQueueItem {
   updatedUtc: string;
 }
 
+export interface ReviewDetail {
+  intakeDocumentId: string;
+  displayName: string;
+  sampleDocumentId: string | null;
+  scenario: string | null;
+  summary: string | null;
+  documentText: string | null;
+  workflowStatus: string;
+  reviewState: ReviewStateDetail | null;
+  documentType: string;
+  overallConfidence: number;
+  rationale: string;
+  suggestedRouting: string;
+  extractedFields: ExtractedFieldDetail[];
+  validationFlags: ValidationFlagDetail[];
+  auditEvents: AuditEventDetail[];
+  createdUtc: string;
+  updatedUtc: string;
+}
+
+export interface ReviewStateDetail {
+  requiresHumanReview: boolean;
+  createdUtc: string;
+  updatedUtc: string;
+}
+
+export interface ExtractedFieldDetail {
+  name: string;
+  value: string;
+  confidence: number;
+}
+
+export interface ValidationFlagDetail {
+  flagType: string;
+  severity: string;
+  fieldName: string | null;
+  message: string;
+  createdUtc: string;
+}
+
+export interface AuditEventDetail {
+  eventType: string;
+  message: string;
+  createdUtc: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -50,6 +96,10 @@ export class IntakeApiService {
 
   getReviewQueue() {
     return this.http.get<ReviewQueueItem[]>(`${this.apiBaseUrl}/api/review-queue`);
+  }
+
+  getReviewDetail(intakeDocumentId: string) {
+    return this.http.get<ReviewDetail>(`${this.apiBaseUrl}/api/review-queue/${intakeDocumentId}`);
   }
 
   createIntakeDocumentFromSample(sampleDocumentId: string) {

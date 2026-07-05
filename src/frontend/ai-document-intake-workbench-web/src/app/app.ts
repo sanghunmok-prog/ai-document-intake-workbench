@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { IntakeApiService, IntakeDocument, ReviewQueueItem, SampleDocument } from './intake-api.service';
+import { IntakeApiService, IntakeDocument, ReviewDetail, ReviewQueueItem, SampleDocument } from './intake-api.service';
 
-type AppView = 'overview' | 'intake' | 'reviewQueue';
+type AppView = 'overview' | 'intake' | 'reviewQueue' | 'reviewDetail';
 
 @Component({
   selector: 'app-root',
@@ -17,14 +18,19 @@ export class App implements OnInit {
   protected readonly sampleDocuments = signal<SampleDocument[]>([]);
   protected readonly intakeDocuments = signal<IntakeDocument[]>([]);
   protected readonly reviewQueueItems = signal<ReviewQueueItem[]>([]);
+  protected readonly reviewDetail = signal<ReviewDetail | null>(null);
+  protected readonly selectedReviewDetailId = signal<string | null>(null);
   protected readonly createdDocument = signal<IntakeDocument | null>(null);
   protected readonly samplesLoading = signal(false);
   protected readonly intakeLoading = signal(false);
   protected readonly reviewQueueLoading = signal(false);
+  protected readonly reviewDetailLoading = signal(false);
   protected readonly creatingSampleId = signal<string | null>(null);
   protected readonly sampleError = signal<string | null>(null);
   protected readonly intakeError = signal<string | null>(null);
   protected readonly reviewQueueError = signal<string | null>(null);
+  protected readonly reviewDetailError = signal<string | null>(null);
+  protected readonly reviewDetailNotFound = signal(false);
 
   private readonly intakeApi = inject(IntakeApiService);
 
@@ -47,6 +53,16 @@ export class App implements OnInit {
     void this.loadReviewQueue();
   }
 
+  protected openReviewDetail(item: ReviewQueueItem): void {
+    this.activeView.set('reviewDetail');
+    this.selectedReviewDetailId.set(item.intakeDocumentId);
+    void this.loadReviewDetail(item.intakeDocumentId);
+  }
+
+  protected backToReviewQueue(): void {
+    this.showReviewQueue();
+  }
+
   protected async refreshIntake(): Promise<void> {
     await Promise.all([
       this.loadSamples(true),
@@ -56,6 +72,14 @@ export class App implements OnInit {
 
   protected async refreshReviewQueue(): Promise<void> {
     await this.loadReviewQueue();
+  }
+
+  protected async refreshReviewDetail(): Promise<void> {
+    const intakeDocumentId = this.selectedReviewDetailId();
+
+    if (intakeDocumentId) {
+      await this.loadReviewDetail(intakeDocumentId);
+    }
   }
 
   protected async createIntakeDocument(sample: SampleDocument): Promise<void> {
@@ -124,6 +148,26 @@ export class App implements OnInit {
       this.reviewQueueError.set(this.describeError(error, 'Review queue could not be loaded.'));
     } finally {
       this.reviewQueueLoading.set(false);
+    }
+  }
+
+  private async loadReviewDetail(intakeDocumentId: string): Promise<void> {
+    this.reviewDetailLoading.set(true);
+    this.reviewDetailError.set(null);
+    this.reviewDetailNotFound.set(false);
+    this.reviewDetail.set(null);
+
+    try {
+      const detail = await firstValueFrom(this.intakeApi.getReviewDetail(intakeDocumentId));
+      this.reviewDetail.set(detail);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.reviewDetailNotFound.set(true);
+      } else {
+        this.reviewDetailError.set(this.describeError(error, 'Review detail could not be loaded.'));
+      }
+    } finally {
+      this.reviewDetailLoading.set(false);
     }
   }
 

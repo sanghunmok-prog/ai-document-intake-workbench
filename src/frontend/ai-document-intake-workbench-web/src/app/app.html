@@ -8,7 +8,7 @@
     <nav class="nav" aria-label="Primary">
       <button type="button" [class.active]="activeView() === 'overview'" (click)="showOverview()">Overview</button>
       <button type="button" [class.active]="activeView() === 'intake'" (click)="showIntake()">Sample Intake</button>
-      <button type="button" [class.active]="activeView() === 'reviewQueue'" (click)="showReviewQueue()">Review Queue</button>
+      <button type="button" [class.active]="activeView() === 'reviewQueue' || activeView() === 'reviewDetail'" (click)="showReviewQueue()">Review Queue</button>
     </nav>
   </header>
 
@@ -155,6 +155,7 @@
             <span role="columnheader">Confidence</span>
             <span role="columnheader">Flags</span>
             <span role="columnheader">Updated</span>
+            <span role="columnheader">Inspect</span>
           </div>
           @for (item of reviewQueueItems(); track item.intakeDocumentId) {
             <div class="table-row queue-row" [class.needs-attention]="queueItemNeedsAttention(item)" role="row">
@@ -178,9 +179,159 @@
                 }
               </span>
               <span role="cell">{{ item.updatedUtc | date:'short' }}</span>
+              <span role="cell">
+                <button type="button" class="secondary-action compact-action" (click)="openReviewDetail(item)">Open</button>
+              </span>
             </div>
           }
         </div>
+      }
+    </section>
+  }
+
+  @if (activeView() === 'reviewDetail') {
+    <section class="workspace" aria-labelledby="detail-title">
+      <div class="workspace-header">
+        <div>
+          <p class="eyebrow">Read-only inspection</p>
+          <h2 id="detail-title">Review Detail</h2>
+        </div>
+        <div class="action-row">
+          <button type="button" class="secondary-action" (click)="backToReviewQueue()">Back to Queue</button>
+          <button type="button" class="secondary-action" (click)="refreshReviewDetail()">Refresh</button>
+        </div>
+      </div>
+
+      @if (reviewDetailError()) {
+        <p class="notice error">{{ reviewDetailError() }}</p>
+      }
+
+      @if (reviewDetailLoading()) {
+        <p class="notice">Loading review detail...</p>
+      } @else if (reviewDetailNotFound()) {
+        <p class="notice error">Review queue item was not found.</p>
+      } @else if (reviewDetail(); as detail) {
+        <section class="status-grid detail-summary" aria-label="Review detail summary">
+          <div>
+            <span class="label">Document</span>
+            <strong>{{ detail.displayName }}</strong>
+          </div>
+          <div>
+            <span class="label">Status</span>
+            <strong>{{ detail.workflowStatus }}</strong>
+          </div>
+          <div>
+            <span class="label">Classification</span>
+            <strong>{{ detail.documentType }}</strong>
+          </div>
+          <div>
+            <span class="label">Confidence</span>
+            <strong>{{ formatConfidence(detail.overallConfidence) }}</strong>
+          </div>
+        </section>
+
+        <section class="detail-grid">
+          <article class="detail-panel">
+            <h3>Source Context</h3>
+            <dl class="meta-list">
+              <div>
+                <dt>Sample</dt>
+                <dd>{{ detail.sampleDocumentId ?? detail.scenario ?? 'Local sample' }}</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>{{ detail.createdUtc | date:'short' }}</dd>
+              </div>
+              <div>
+                <dt>Updated</dt>
+                <dd>{{ detail.updatedUtc | date:'short' }}</dd>
+              </div>
+              <div>
+                <dt>Human Review</dt>
+                <dd>{{ detail.reviewState?.requiresHumanReview ? 'Required' : 'Not recorded' }}</dd>
+              </div>
+            </dl>
+            <p class="preview">{{ detail.summary ?? 'No document summary is available.' }}</p>
+            <pre class="text-block">{{ detail.documentText ?? 'No source document text is available.' }}</pre>
+          </article>
+
+          <article class="detail-panel">
+            <h3>AI Summary</h3>
+            <dl class="meta-list">
+              <div>
+                <dt>Suggested Routing</dt>
+                <dd>{{ detail.suggestedRouting }}</dd>
+              </div>
+              <div>
+                <dt>Rationale</dt>
+                <dd>{{ detail.rationale }}</dd>
+              </div>
+            </dl>
+          </article>
+        </section>
+
+        <section class="intake-list" aria-labelledby="fields-title">
+          <h3 id="fields-title">Extracted Fields</h3>
+          @if (detail.extractedFields.length === 0) {
+            <p class="notice">No extracted fields are available.</p>
+          } @else {
+            <div class="document-table fields-table" role="table" aria-label="Extracted fields">
+              <div class="table-row table-head" role="row">
+                <span role="columnheader">Field</span>
+                <span role="columnheader">Value</span>
+                <span role="columnheader">Confidence</span>
+              </div>
+              @for (field of detail.extractedFields; track field.name) {
+                <div class="table-row" role="row">
+                  <span role="cell">{{ field.name }}</span>
+                  <span role="cell">{{ field.value || 'Not provided' }}</span>
+                  <span role="cell" [class.low-confidence]="field.confidence < 0.75">{{ formatConfidence(field.confidence) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="intake-list" aria-labelledby="flags-title">
+          <h3 id="flags-title">Validation Flags</h3>
+          @if (detail.validationFlags.length === 0) {
+            <p class="notice">No validation flags are recorded.</p>
+          } @else {
+            <div class="document-table flags-table" role="table" aria-label="Validation flags">
+              <div class="table-row table-head" role="row">
+                <span role="columnheader">Type</span>
+                <span role="columnheader">Severity</span>
+                <span role="columnheader">Field</span>
+                <span role="columnheader">Message</span>
+              </div>
+              @for (flag of detail.validationFlags; track flag.message) {
+                <div class="table-row queue-row needs-attention" role="row">
+                  <span role="cell">{{ flag.flagType }}</span>
+                  <span role="cell"><span class="flag-pill attention">{{ flag.severity }}</span></span>
+                  <span role="cell">{{ flag.fieldName ?? 'Document' }}</span>
+                  <span role="cell">{{ flag.message }}</span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="intake-list" aria-labelledby="audit-title">
+          <h3 id="audit-title">Audit History</h3>
+          @if (detail.auditEvents.length === 0) {
+            <p class="notice">No audit events are recorded.</p>
+          } @else {
+            <ol class="audit-list">
+              @for (event of detail.auditEvents; track event.createdUtc + event.eventType) {
+                <li>
+                  <span class="label">{{ event.eventType }}</span>
+                  <p>{{ event.message }}</p>
+                  <small>{{ event.createdUtc | date:'short' }}</small>
+                </li>
+              }
+            </ol>
+          }
+        </section>
       }
     </section>
   }
