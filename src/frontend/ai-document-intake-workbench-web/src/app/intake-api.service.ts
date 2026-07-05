@@ -54,6 +54,9 @@ export interface ReviewDetail {
 
 export interface ReviewStateDetail {
   requiresHumanReview: boolean;
+  decision: string | null;
+  decidedBy: string | null;
+  decidedUtc: string | null;
   createdUtc: string;
   updatedUtc: string;
 }
@@ -62,6 +65,9 @@ export interface ExtractedFieldDetail {
   name: string;
   value: string;
   confidence: number;
+  reviewedValue: string | null;
+  reviewedBy: string | null;
+  reviewedUtc: string | null;
 }
 
 export interface ValidationFlagDetail {
@@ -76,6 +82,26 @@ export interface AuditEventDetail {
   eventType: string;
   message: string;
   createdUtc: string;
+}
+
+export interface ReviewFieldUpdatesRequest {
+  fieldUpdates: ReviewFieldUpdateRequest[];
+}
+
+export interface ReviewFieldUpdateRequest {
+  fieldName: string;
+  reviewedValue: string;
+}
+
+export interface ReviewerDecisionRequest {
+  decision: string;
+}
+
+export interface ReviewWorkflowResponse {
+  intakeDocumentId: string;
+  workflowStatus: string;
+  decision: string | null;
+  editedFieldCount: number;
 }
 
 @Injectable({
@@ -100,6 +126,18 @@ export class IntakeApiService {
 
   getReviewDetail(intakeDocumentId: string) {
     return this.http.get<ReviewDetail>(`${this.apiBaseUrl}/api/review-queue/${intakeDocumentId}`);
+  }
+
+  updateReviewFields(intakeDocumentId: string, request: ReviewFieldUpdatesRequest) {
+    return this.http.put<ReviewWorkflowResponse>(
+      `${this.apiBaseUrl}/api/intake-documents/${intakeDocumentId}/review/fields`,
+      request);
+  }
+
+  recordReviewerDecision(intakeDocumentId: string, request: ReviewerDecisionRequest) {
+    return this.http.post<ReviewWorkflowResponse>(
+      `${this.apiBaseUrl}/api/intake-documents/${intakeDocumentId}/review/decision`,
+      request);
   }
 
   createIntakeDocumentFromSample(sampleDocumentId: string) {

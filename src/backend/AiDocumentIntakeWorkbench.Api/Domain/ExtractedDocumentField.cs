@@ -40,7 +40,30 @@ public sealed class ExtractedDocumentField
 
     public decimal Confidence { get; private set; }
 
+    public string? ReviewedValue { get; private set; }
+
+    public string? ReviewedBy { get; private set; }
+
+    public DateTime? ReviewedUtc { get; private set; }
+
     public DateTime CreatedUtc { get; private set; }
 
     public DocumentProcessingResult? DocumentProcessingResult { get; private set; }
+
+    public void ApplyReviewedValue(string reviewedValue, string reviewedBy)
+    {
+        if (string.IsNullOrWhiteSpace(reviewedValue))
+        {
+            throw new ArgumentException("Reviewed value is required.", nameof(reviewedValue));
+        }
+
+        if (string.IsNullOrWhiteSpace(reviewedBy))
+        {
+            throw new ArgumentException("Reviewer is required.", nameof(reviewedBy));
+        }
+
+        ReviewedValue = reviewedValue.Trim();
+        ReviewedBy = reviewedBy.Trim();
+        ReviewedUtc = DateTime.UtcNow;
+    }
 }
