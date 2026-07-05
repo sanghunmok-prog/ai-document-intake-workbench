@@ -20,6 +20,22 @@ public sealed class IntakeDocumentTests
     }
 
     [Fact]
+    public void Constructor_TrimsSampleMetadata()
+    {
+        var document = new IntakeDocument(
+            "Sample",
+            " clean-high-confidence ",
+            " Complete invoice scenario ",
+            " Complete summary. ",
+            " Document text. ");
+
+        Assert.Equal("clean-high-confidence", document.SampleDocumentId);
+        Assert.Equal("Complete invoice scenario", document.Scenario);
+        Assert.Equal("Complete summary.", document.Summary);
+        Assert.Equal("Document text.", document.DocumentText);
+    }
+
+    [Fact]
     public void Constructor_RejectsMissingDisplayName()
     {
         Assert.Throws<ArgumentException>(() => new IntakeDocument(" "));

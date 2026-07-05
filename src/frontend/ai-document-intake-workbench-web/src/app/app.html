@@ -1,24 +1,126 @@
-<main class="shell">
-  <section class="intro" aria-labelledby="app-title">
-    <p class="eyebrow">PR01 application shell</p>
-    <h1 id="app-title">{{ appName }}</h1>
-    <p class="summary">
-      Backend and frontend shells are in place for local development. Product workflow behavior will be added in later PRs.
-    </p>
-  </section>
+<main class="app-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Workflow intake</p>
+      <h1>{{ appName }}</h1>
+    </div>
 
-  <section class="status" aria-label="Current shell status">
-    <div>
-      <span class="label">Backend</span>
-      <strong>ASP.NET Core API shell</strong>
-    </div>
-    <div>
-      <span class="label">Frontend</span>
-      <strong>Angular application shell</strong>
-    </div>
-    <div>
-      <span class="label">Scope</span>
-      <strong>No workflow features implemented</strong>
-    </div>
-  </section>
+    <nav class="nav" aria-label="Primary">
+      <button type="button" [class.active]="activeView() === 'overview'" (click)="showOverview()">Overview</button>
+      <button type="button" [class.active]="activeView() === 'intake'" (click)="showIntake()">Sample Intake</button>
+    </nav>
+  </header>
+
+  @if (activeView() === 'overview') {
+    <section class="overview" aria-labelledby="overview-title">
+      <div class="intro">
+        <p class="eyebrow">PR03 application flow</p>
+        <h2 id="overview-title">Local sample document intake</h2>
+        <p class="summary">
+          Select a local business document sample, persist it as an intake document, and review its initial workflow status.
+        </p>
+        <button type="button" class="primary-action" (click)="showIntake()">Open Sample Intake</button>
+      </div>
+
+      <section class="status-grid" aria-label="Current shell status">
+        <div>
+          <span class="label">Backend</span>
+          <strong>ASP.NET Core API</strong>
+        </div>
+        <div>
+          <span class="label">Frontend</span>
+          <strong>Angular workflow shell</strong>
+        </div>
+        <div>
+          <span class="label">AI</span>
+          <strong>Not implemented</strong>
+        </div>
+      </section>
+    </section>
+  }
+
+  @if (activeView() === 'intake') {
+    <section class="workspace" aria-labelledby="intake-title">
+      <div class="workspace-header">
+        <div>
+          <p class="eyebrow">Sample catalog</p>
+          <h2 id="intake-title">Document Intake</h2>
+        </div>
+        <button type="button" class="secondary-action" (click)="refreshIntake()">Refresh</button>
+      </div>
+
+      @if (sampleError()) {
+        <p class="notice error">{{ sampleError() }}</p>
+      }
+
+      @if (samplesLoading()) {
+        <p class="notice">Loading sample documents...</p>
+      } @else if (sampleDocuments().length === 0) {
+        <p class="notice">No sample documents are available.</p>
+      } @else {
+        <section class="sample-list" aria-label="Sample documents">
+          @for (sample of sampleDocuments(); track sample.id) {
+            <article class="sample-card">
+              <div>
+                <span class="sample-id">{{ sample.id }}</span>
+                <h3>{{ sample.title }}</h3>
+                <p class="scenario">{{ sample.scenario }}</p>
+                <p>{{ sample.summary }}</p>
+                <p class="preview">{{ sample.contentPreview }}</p>
+              </div>
+              <button
+                type="button"
+                class="primary-action"
+                [disabled]="creatingSampleId() !== null"
+                (click)="createIntakeDocument(sample)">
+                {{ creatingSampleId() === sample.id ? 'Creating...' : 'Create Intake' }}
+              </button>
+            </article>
+          }
+        </section>
+      }
+
+      @if (createdDocument()) {
+        <section class="created-result" aria-label="Created intake document">
+          <span class="label">Created Intake</span>
+          <strong>{{ createdDocument()?.displayName }}</strong>
+          <p>ID: {{ createdDocument()?.id }}</p>
+          <p>Status: {{ createdDocument()?.status }}</p>
+        </section>
+      }
+
+      <section class="intake-list" aria-labelledby="persisted-intake-title">
+        <div class="section-heading">
+          <h3 id="persisted-intake-title">Persisted Intake Documents</h3>
+        </div>
+
+        @if (intakeError()) {
+          <p class="notice error">{{ intakeError() }}</p>
+        }
+
+        @if (intakeLoading()) {
+          <p class="notice">Loading persisted intake documents...</p>
+        } @else if (intakeDocuments().length === 0) {
+          <p class="notice">No intake documents have been created.</p>
+        } @else {
+          <div class="document-table" role="table" aria-label="Persisted intake documents">
+            <div class="table-row table-head" role="row">
+              <span role="columnheader">Document</span>
+              <span role="columnheader">Sample</span>
+              <span role="columnheader">Status</span>
+              <span role="columnheader">Created</span>
+            </div>
+            @for (document of intakeDocuments(); track document.id) {
+              <div class="table-row" role="row">
+                <span role="cell">{{ document.displayName }}</span>
+                <span role="cell">{{ document.sampleDocumentId ?? 'Local sample' }}</span>
+                <span role="cell" class="status-pill">{{ document.status }}</span>
+                <span role="cell">{{ document.createdUtc | date:'short' }}</span>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </section>
+  }
 </main>

@@ -16,6 +16,17 @@ public sealed class IntakeDocumentConfiguration : IEntityTypeConfiguration<Intak
             .HasMaxLength(256)
             .IsRequired();
 
+        builder.Property(document => document.SampleDocumentId)
+            .HasMaxLength(128);
+
+        builder.Property(document => document.Scenario)
+            .HasMaxLength(128);
+
+        builder.Property(document => document.Summary)
+            .HasMaxLength(512);
+
+        builder.Property(document => document.DocumentText);
+
         builder.Property(document => document.Status)
             .HasConversion<string>()
             .HasMaxLength(32)

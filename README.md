@@ -4,7 +4,7 @@ AI Document Intake Workbench is a planned full-stack workflow application for AI
 
 ## Current Status
 
-PR02 adds the initial backend domain model and EF Core persistence foundation. Product workflow behavior has not been implemented yet.
+PR03 adds local sample document intake without AI processing. Users can select a sample business document, persist it as an intake document, and view its initial workflow status.
 
 ## Planned Stack
 
@@ -47,7 +47,7 @@ npm start
 
 The frontend development server is available at `http://localhost:4200/` by default.
 
-These commands run only the PR01 shells. Document intake, AI processing, validation, review, and audit workflow behavior will be added in later PRs.
+The frontend includes a sample intake screen. AI processing, validation, review, and audit history UI will be added in later PRs.
 
 ## Local Database Configuration
 
@@ -66,6 +66,8 @@ dotnet ef database update --project ./src/backend/AiDocumentIntakeWorkbench.Api/
 ```
 
 The `/health` endpoint does not require a database connection.
+
+The sample catalog endpoint does not require database records, but creating and listing intake documents requires the configured SQL Server database to be available and migrated.
 
 ## Intended Workflow
 
