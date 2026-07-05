@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
-import { IntakeApiService, IntakeDocument, SampleDocument } from './intake-api.service';
+import { IntakeApiService, IntakeDocument, ReviewQueueItem, SampleDocument } from './intake-api.service';
 
-type AppView = 'overview' | 'intake';
+type AppView = 'overview' | 'intake' | 'reviewQueue';
 
 @Component({
   selector: 'app-root',
@@ -16,12 +16,15 @@ export class App implements OnInit {
   protected readonly activeView = signal<AppView>('overview');
   protected readonly sampleDocuments = signal<SampleDocument[]>([]);
   protected readonly intakeDocuments = signal<IntakeDocument[]>([]);
+  protected readonly reviewQueueItems = signal<ReviewQueueItem[]>([]);
   protected readonly createdDocument = signal<IntakeDocument | null>(null);
   protected readonly samplesLoading = signal(false);
   protected readonly intakeLoading = signal(false);
+  protected readonly reviewQueueLoading = signal(false);
   protected readonly creatingSampleId = signal<string | null>(null);
   protected readonly sampleError = signal<string | null>(null);
   protected readonly intakeError = signal<string | null>(null);
+  protected readonly reviewQueueError = signal<string | null>(null);
 
   private readonly intakeApi = inject(IntakeApiService);
 
@@ -39,11 +42,20 @@ export class App implements OnInit {
     void this.loadIntakeDocuments();
   }
 
+  protected showReviewQueue(): void {
+    this.activeView.set('reviewQueue');
+    void this.loadReviewQueue();
+  }
+
   protected async refreshIntake(): Promise<void> {
     await Promise.all([
       this.loadSamples(true),
       this.loadIntakeDocuments()
     ]);
+  }
+
+  protected async refreshReviewQueue(): Promise<void> {
+    await this.loadReviewQueue();
   }
 
   protected async createIntakeDocument(sample: SampleDocument): Promise<void> {
@@ -59,6 +71,14 @@ export class App implements OnInit {
     } finally {
       this.creatingSampleId.set(null);
     }
+  }
+
+  protected formatConfidence(confidence: number): string {
+    return `${Math.round(confidence * 100)}%`;
+  }
+
+  protected queueItemNeedsAttention(item: ReviewQueueItem): boolean {
+    return item.validationFlagCount > 0 || item.overallConfidence < 0.75;
   }
 
   private async loadSamples(force = false): Promise<void> {
@@ -90,6 +110,20 @@ export class App implements OnInit {
       this.intakeError.set(this.describeError(error, 'Persisted intake documents could not be loaded.'));
     } finally {
       this.intakeLoading.set(false);
+    }
+  }
+
+  private async loadReviewQueue(): Promise<void> {
+    this.reviewQueueLoading.set(true);
+    this.reviewQueueError.set(null);
+
+    try {
+      const queueItems = await firstValueFrom(this.intakeApi.getReviewQueue());
+      this.reviewQueueItems.set(queueItems);
+    } catch (error) {
+      this.reviewQueueError.set(this.describeError(error, 'Review queue could not be loaded.'));
+    } finally {
+      this.reviewQueueLoading.set(false);
     }
   }
 

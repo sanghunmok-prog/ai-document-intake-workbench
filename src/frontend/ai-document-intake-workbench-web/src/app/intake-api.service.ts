@@ -19,6 +19,19 @@ export interface IntakeDocument {
   updatedUtc: string;
 }
 
+export interface ReviewQueueItem {
+  intakeDocumentId: string;
+  displayName: string;
+  workflowStatus: string;
+  documentType: string;
+  overallConfidence: number;
+  validationFlagCount: number;
+  highestSeverity: string | null;
+  sampleDocumentId: string | null;
+  scenario: string | null;
+  updatedUtc: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -33,6 +46,10 @@ export class IntakeApiService {
 
   getIntakeDocuments() {
     return this.http.get<IntakeDocument[]>(`${this.apiBaseUrl}/api/intake-documents`);
+  }
+
+  getReviewQueue() {
+    return this.http.get<ReviewQueueItem[]>(`${this.apiBaseUrl}/api/review-queue`);
   }
 
   createIntakeDocumentFromSample(sampleDocumentId: string) {

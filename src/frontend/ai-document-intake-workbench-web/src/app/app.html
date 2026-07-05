@@ -8,18 +8,22 @@
     <nav class="nav" aria-label="Primary">
       <button type="button" [class.active]="activeView() === 'overview'" (click)="showOverview()">Overview</button>
       <button type="button" [class.active]="activeView() === 'intake'" (click)="showIntake()">Sample Intake</button>
+      <button type="button" [class.active]="activeView() === 'reviewQueue'" (click)="showReviewQueue()">Review Queue</button>
     </nav>
   </header>
 
   @if (activeView() === 'overview') {
     <section class="overview" aria-labelledby="overview-title">
       <div class="intro">
-        <p class="eyebrow">PR03 application flow</p>
-        <h2 id="overview-title">Local sample document intake</h2>
+        <p class="eyebrow">Workflow shell</p>
+        <h2 id="overview-title">Intake and review queue</h2>
         <p class="summary">
-          Select a local business document sample, persist it as an intake document, and review its initial workflow status.
+          Select a local business document sample and view AI-processed, review-ready items in a focused queue.
         </p>
-        <button type="button" class="primary-action" (click)="showIntake()">Open Sample Intake</button>
+        <div class="action-row">
+          <button type="button" class="primary-action" (click)="showIntake()">Open Sample Intake</button>
+          <button type="button" class="secondary-action" (click)="showReviewQueue()">Open Review Queue</button>
+        </div>
       </div>
 
       <section class="status-grid" aria-label="Current shell status">
@@ -33,7 +37,7 @@
         </div>
         <div>
           <span class="label">AI</span>
-          <strong>Not implemented</strong>
+          <strong>Structured mock processing</strong>
         </div>
       </section>
     </section>
@@ -121,6 +125,63 @@
           </div>
         }
       </section>
+    </section>
+  }
+
+  @if (activeView() === 'reviewQueue') {
+    <section class="workspace" aria-labelledby="queue-title">
+      <div class="workspace-header">
+        <div>
+          <p class="eyebrow">Human review</p>
+          <h2 id="queue-title">Review Queue</h2>
+        </div>
+        <button type="button" class="secondary-action" (click)="refreshReviewQueue()">Refresh</button>
+      </div>
+
+      @if (reviewQueueError()) {
+        <p class="notice error">{{ reviewQueueError() }}</p>
+      }
+
+      @if (reviewQueueLoading()) {
+        <p class="notice">Loading review queue...</p>
+      } @else if (reviewQueueItems().length === 0) {
+        <p class="notice">No AI-processed intake documents are awaiting human review.</p>
+      } @else {
+        <div class="document-table queue-table" role="table" aria-label="Review queue">
+          <div class="table-row table-head" role="row">
+            <span role="columnheader">Document</span>
+            <span role="columnheader">Status</span>
+            <span role="columnheader">Classification</span>
+            <span role="columnheader">Confidence</span>
+            <span role="columnheader">Flags</span>
+            <span role="columnheader">Updated</span>
+          </div>
+          @for (item of reviewQueueItems(); track item.intakeDocumentId) {
+            <div class="table-row queue-row" [class.needs-attention]="queueItemNeedsAttention(item)" role="row">
+              <span role="cell" class="cell-stack">
+                <strong>{{ item.displayName }}</strong>
+                <small>{{ item.sampleDocumentId ?? item.scenario ?? 'Processed intake document' }}</small>
+              </span>
+              <span role="cell">
+                <span class="status-pill">{{ item.workflowStatus }}</span>
+              </span>
+              <span role="cell">{{ item.documentType }}</span>
+              <span role="cell" class="confidence-value" [class.low-confidence]="item.overallConfidence < 0.75">
+                {{ formatConfidence(item.overallConfidence) }}
+              </span>
+              <span role="cell" class="cell-stack">
+                <span class="flag-pill" [class.attention]="item.validationFlagCount > 0">
+                  {{ item.validationFlagCount }} {{ item.validationFlagCount === 1 ? 'flag' : 'flags' }}
+                </span>
+                @if (item.highestSeverity) {
+                  <small>{{ item.highestSeverity }} severity</small>
+                }
+              </span>
+              <span role="cell">{{ item.updatedUtc | date:'short' }}</span>
+            </div>
+          }
+        </div>
+      }
     </section>
   }
 </main>
