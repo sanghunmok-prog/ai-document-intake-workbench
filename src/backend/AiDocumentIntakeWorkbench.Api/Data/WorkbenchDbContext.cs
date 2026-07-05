@@ -16,6 +16,12 @@ public sealed class WorkbenchDbContext(DbContextOptions<WorkbenchDbContext> opti
 
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
+    public DbSet<DocumentProcessingResult> DocumentProcessingResults => Set<DocumentProcessingResult>();
+
+    public DbSet<ExtractedDocumentField> ExtractedDocumentFields => Set<ExtractedDocumentField>();
+
+    public DbSet<ValidationFlag> ValidationFlags => Set<ValidationFlag>();
+
     public static string ResolveConnectionString(string? configuredConnectionString)
     {
         return string.IsNullOrWhiteSpace(configuredConnectionString)
