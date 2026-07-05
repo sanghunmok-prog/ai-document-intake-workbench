@@ -5,10 +5,6 @@
   background: #f7f9fb;
 }
 
-.app-shell {
-  min-height: 100vh;
-}
-
 .topbar {
   display: flex;
   align-items: center;
@@ -267,8 +263,10 @@ strong {
 }
 
 .queue-table .table-row {
-  grid-template-columns: minmax(14rem, 1.35fr) minmax(8rem, 0.7fr) minmax(10rem, 0.9fr) minmax(7rem, 0.55fr) minmax(7rem, 0.6fr) minmax(10rem, 0.75fr);
+  grid-template-columns: minmax(14rem, 1.35fr) minmax(8rem, 0.7fr) minmax(10rem, 0.9fr) minmax(7rem, 0.55fr) minmax(7rem, 0.6fr) minmax(10rem, 0.75fr) minmax(5rem, 0.45fr);
 }
+
+.text-block{white-space:pre-wrap}
 
 .queue-row.needs-attention {
   box-shadow: inset 4px 0 0 #b56a12;
@@ -292,7 +290,7 @@ strong {
   background: #e8f3f5;
 }
 
-.confidence-value.low-confidence {
+.low-confidence {
   color: #8b3b16;
   font-weight: 800;
 }

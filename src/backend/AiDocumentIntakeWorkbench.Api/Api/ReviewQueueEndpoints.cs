@@ -10,6 +10,7 @@ public static class ReviewQueueEndpoints
     public static IEndpointRouteBuilder MapReviewQueueEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/review-queue", ListAsync);
+        app.MapGet("/api/review-queue/{id:guid}", GetDetailAsync);
 
         return app;
     }
@@ -84,6 +85,117 @@ public static class ReviewQueueEndpoints
         return TypedResults.Ok(response);
     }
 
+    public static async Task<IResult> GetDetailAsync(
+        Guid id,
+        WorkbenchDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var document = await dbContext.IntakeDocuments
+            .AsNoTracking()
+            .Where(document => document.Id == id && document.Status == WorkflowStatus.AwaitingReview)
+            .Select(document => new
+            {
+                document.Id,
+                document.DisplayName,
+                document.SampleDocumentId,
+                document.Scenario,
+                document.Summary,
+                document.DocumentText,
+                document.Status,
+                document.CreatedUtc,
+                document.UpdatedUtc
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (document is null)
+        {
+            return TypedResults.NotFound(new ErrorResponse("Review queue item was not found."));
+        }
+
+        var processingResult = await dbContext.DocumentProcessingResults
+            .AsNoTracking()
+            .Where(result => result.IntakeDocumentId == id)
+            .OrderByDescending(result => result.CreatedUtc)
+            .Select(result => new
+            {
+                result.Id,
+                result.DocumentType,
+                result.OverallConfidence,
+                result.SuggestedRouting,
+                result.Rationale
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (processingResult is null)
+        {
+            return TypedResults.NotFound(new ErrorResponse("Review queue item was not found."));
+        }
+
+        var reviewState = await dbContext.ReviewStates
+            .AsNoTracking()
+            .Where(state => state.IntakeDocumentId == id)
+            .Select(state => new ReviewStateDetailResponse(
+                state.RequiresHumanReview,
+                state.CreatedUtc,
+                state.UpdatedUtc))
+            .SingleOrDefaultAsync(cancellationToken);
+
+        var extractedFields = await dbContext.ExtractedDocumentFields
+            .AsNoTracking()
+            .Where(field => field.DocumentProcessingResultId == processingResult.Id)
+            .OrderBy(field => field.Name)
+            .Select(field => new ExtractedFieldDetailResponse(
+                field.Name,
+                field.Value,
+                field.Confidence))
+            .ToArrayAsync(cancellationToken);
+
+        var persistedFlags = await dbContext.ValidationFlags
+            .AsNoTracking()
+            .Where(flag => flag.DocumentProcessingResultId == processingResult.Id)
+            .ToArrayAsync(cancellationToken);
+
+        var validationFlags = persistedFlags
+            .OrderByDescending(flag => flag.Severity)
+            .ThenBy(flag => flag.FlagType)
+            .Select(flag => new ValidationFlagDetailResponse(
+                flag.FlagType.ToString(),
+                flag.Severity.ToString(),
+                flag.FieldName,
+                flag.Message,
+                flag.CreatedUtc))
+            .ToArray();
+
+        var auditEvents = await dbContext.AuditEvents
+            .AsNoTracking()
+            .Where(auditEvent => auditEvent.IntakeDocumentId == id)
+            .OrderBy(auditEvent => auditEvent.CreatedUtc)
+            .Select(auditEvent => new AuditEventDetailResponse(
+                auditEvent.EventType,
+                auditEvent.Message,
+                auditEvent.CreatedUtc))
+            .ToArrayAsync(cancellationToken);
+
+        return TypedResults.Ok(new ReviewDetailResponse(
+            document.Id,
+            document.DisplayName,
+            document.SampleDocumentId,
+            document.Scenario,
+            document.Summary,
+            document.DocumentText,
+            document.Status.ToString(),
+            reviewState,
+            processingResult.DocumentType,
+            processingResult.OverallConfidence,
+            processingResult.Rationale,
+            processingResult.SuggestedRouting,
+            extractedFields,
+            validationFlags,
+            auditEvents,
+            document.CreatedUtc,
+            document.UpdatedUtc));
+    }
+
     private sealed record ValidationFlagSummary(
         int Count,
         ValidationFlagSeverity HighestSeverity);
@@ -100,3 +212,44 @@ public sealed record ReviewQueueItemResponse(
     string? SampleDocumentId,
     string? Scenario,
     DateTime UpdatedUtc);
+
+public sealed record ReviewDetailResponse(
+    Guid IntakeDocumentId,
+    string DisplayName,
+    string? SampleDocumentId,
+    string? Scenario,
+    string? Summary,
+    string? DocumentText,
+    string WorkflowStatus,
+    ReviewStateDetailResponse? ReviewState,
+    string DocumentType,
+    decimal OverallConfidence,
+    string Rationale,
+    string SuggestedRouting,
+    ExtractedFieldDetailResponse[] ExtractedFields,
+    ValidationFlagDetailResponse[] ValidationFlags,
+    AuditEventDetailResponse[] AuditEvents,
+    DateTime CreatedUtc,
+    DateTime UpdatedUtc);
+
+public sealed record ReviewStateDetailResponse(
+    bool RequiresHumanReview,
+    DateTime CreatedUtc,
+    DateTime UpdatedUtc);
+
+public sealed record ExtractedFieldDetailResponse(
+    string Name,
+    string Value,
+    decimal Confidence);
+
+public sealed record ValidationFlagDetailResponse(
+    string FlagType,
+    string Severity,
+    string? FieldName,
+    string Message,
+    DateTime CreatedUtc);
+
+public sealed record AuditEventDetailResponse(
+    string EventType,
+    string Message,
+    DateTime CreatedUtc);
