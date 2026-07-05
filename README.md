@@ -4,7 +4,7 @@ AI Document Intake Workbench is a planned full-stack workflow application for AI
 
 ## Current Status
 
-PR01 adds minimal runnable backend and frontend application shells. Product workflow behavior has not been implemented yet.
+PR02 adds the initial backend domain model and EF Core persistence foundation. Product workflow behavior has not been implemented yet.
 
 ## Planned Stack
 
@@ -48,6 +48,24 @@ npm start
 The frontend development server is available at `http://localhost:4200/` by default.
 
 These commands run only the PR01 shells. Document intake, AI processing, validation, review, and audit workflow behavior will be added in later PRs.
+
+## Local Database Configuration
+
+The backend uses the `ConnectionStrings:WorkbenchDb` configuration key for SQL Server. The committed value is a public-safe local placeholder without credentials.
+
+Supply a real local connection string through environment configuration or .NET user secrets:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:WorkbenchDb" "<your-local-sql-server-connection-string>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+```
+
+After configuring SQL Server locally, apply migrations with:
+
+```bash
+dotnet ef database update --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj --startup-project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+```
+
+The `/health` endpoint does not require a database connection.
 
 ## Intended Workflow
 
