@@ -228,7 +228,23 @@
             <span class="label">Confidence</span>
             <strong>{{ formatConfidence(detail.overallConfidence) }}</strong>
           </div>
+          <div>
+            <span class="label">Decision</span>
+            <strong>{{ detail.reviewState?.decision ?? 'Pending' }}</strong>
+          </div>
         </section>
+
+        @if (reviewActionError()) {
+          <p class="notice error">{{ reviewActionError() }}</p>
+        }
+
+        @if (reviewActionMessage()) {
+          <p class="notice">{{ reviewActionMessage() }}</p>
+        }
+
+        @if (isFinalReview(detail)) {
+          <p class="notice">Review is finalized. Field edits and decision controls are disabled.</p>
+        }
 
         <section class="detail-grid">
           <article class="detail-panel">
@@ -248,7 +264,7 @@
               </div>
               <div>
                 <dt>Human Review</dt>
-                <dd>{{ detail.reviewState?.requiresHumanReview ? 'Required' : 'Not recorded' }}</dd>
+                <dd>{{ detail.reviewState?.decision ?? (detail.reviewState?.requiresHumanReview ? 'Required' : 'Not recorded') }}</dd>
               </div>
             </dl>
             <p class="preview">{{ detail.summary ?? 'No document summary is available.' }}</p>
@@ -278,16 +294,74 @@
             <div class="document-table fields-table" role="table" aria-label="Extracted fields">
               <div class="table-row table-head" role="row">
                 <span role="columnheader">Field</span>
-                <span role="columnheader">Value</span>
+                <span role="columnheader">AI Value</span>
                 <span role="columnheader">Confidence</span>
+                <span role="columnheader">Reviewed Value</span>
               </div>
               @for (field of detail.extractedFields; track field.name) {
                 <div class="table-row" role="row">
                   <span role="cell">{{ field.name }}</span>
                   <span role="cell">{{ field.value || 'Not provided' }}</span>
                   <span role="cell" [class.low-confidence]="field.confidence < 0.75">{{ formatConfidence(field.confidence) }}</span>
+                  <span role="cell" class="cell-stack">
+                    <input
+                      type="text"
+                      [value]="reviewFieldValue(field)"
+                      [disabled]="isFinalReview(detail) || reviewFieldsSaving() || reviewDecisionSaving()"
+                      (input)="updateReviewedFieldValue(field.name, $any($event.target).value)"
+                      [attr.aria-label]="'Reviewed value for ' + field.name" />
+                    @if (field.reviewedUtc) {
+                      <small>Saved {{ field.reviewedUtc | date:'short' }}</small>
+                    }
+                  </span>
                 </div>
               }
+            </div>
+
+            @if (!isFinalReview(detail)) {
+              <div class="action-row">
+                <button
+                  type="button"
+                  class="primary-action"
+                  [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
+                  (click)="saveReviewedFields(detail)">
+                  {{ reviewFieldsSaving() ? 'Saving...' : 'Save Field Edits' }}
+                </button>
+              </div>
+            }
+          }
+        </section>
+
+        <section class="intake-list" aria-labelledby="decision-title">
+          <h3 id="decision-title">Reviewer Decision</h3>
+          @if (isFinalReview(detail)) {
+            <p class="notice">
+              Final decision: {{ detail.reviewState?.decision ?? detail.workflowStatus }}
+              @if (detail.reviewState?.decidedUtc) {
+                <span>at {{ detail.reviewState?.decidedUtc | date:'short' }}</span>
+              }
+            </p>
+          } @else {
+            <div class="action-row">
+              <button
+                type="button"
+                class="primary-action"
+                [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
+                (click)="recordReviewerDecision(detail, 'Approved')">
+                Approve
+              </button>
+              <button
+                type="button"
+                [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
+                (click)="recordReviewerDecision(detail, 'Rejected')">
+                Reject
+              </button>
+              <button
+                type="button"
+                [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
+                (click)="recordReviewerDecision(detail, 'NeedsCorrection')">
+                Needs Correction
+              </button>
             </div>
           }
         </section>

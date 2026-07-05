@@ -92,7 +92,7 @@ public static class ReviewQueueEndpoints
     {
         var document = await dbContext.IntakeDocuments
             .AsNoTracking()
-            .Where(document => document.Id == id && document.Status == WorkflowStatus.AwaitingReview)
+            .Where(document => document.Id == id)
             .Select(document => new
             {
                 document.Id,
@@ -131,14 +131,20 @@ public static class ReviewQueueEndpoints
             return TypedResults.NotFound(new ErrorResponse("Review queue item was not found."));
         }
 
-        var reviewState = await dbContext.ReviewStates
+        var persistedReviewState = await dbContext.ReviewStates
             .AsNoTracking()
             .Where(state => state.IntakeDocumentId == id)
-            .Select(state => new ReviewStateDetailResponse(
-                state.RequiresHumanReview,
-                state.CreatedUtc,
-                state.UpdatedUtc))
             .SingleOrDefaultAsync(cancellationToken);
+
+        var reviewState = persistedReviewState is null
+            ? null
+            : new ReviewStateDetailResponse(
+                persistedReviewState.RequiresHumanReview,
+                persistedReviewState.Decision?.ToString(),
+                persistedReviewState.DecidedBy,
+                persistedReviewState.DecidedUtc,
+                persistedReviewState.CreatedUtc,
+                persistedReviewState.UpdatedUtc);
 
         var extractedFields = await dbContext.ExtractedDocumentFields
             .AsNoTracking()
@@ -147,7 +153,10 @@ public static class ReviewQueueEndpoints
             .Select(field => new ExtractedFieldDetailResponse(
                 field.Name,
                 field.Value,
-                field.Confidence))
+                field.Confidence,
+                field.ReviewedValue,
+                field.ReviewedBy,
+                field.ReviewedUtc))
             .ToArrayAsync(cancellationToken);
 
         var persistedFlags = await dbContext.ValidationFlags
@@ -234,13 +243,19 @@ public sealed record ReviewDetailResponse(
 
 public sealed record ReviewStateDetailResponse(
     bool RequiresHumanReview,
+    string? Decision,
+    string? DecidedBy,
+    DateTime? DecidedUtc,
     DateTime CreatedUtc,
     DateTime UpdatedUtc);
 
 public sealed record ExtractedFieldDetailResponse(
     string Name,
     string Value,
-    decimal Confidence);
+    decimal Confidence,
+    string? ReviewedValue,
+    string? ReviewedBy,
+    DateTime? ReviewedUtc);
 
 public sealed record ValidationFlagDetailResponse(
     string FlagType,

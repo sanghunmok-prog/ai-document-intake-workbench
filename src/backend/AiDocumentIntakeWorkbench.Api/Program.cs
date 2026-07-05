@@ -3,6 +3,7 @@ using AiDocumentIntakeWorkbench.Api.Ai;
 using AiDocumentIntakeWorkbench.Api.AiProcessing;
 using AiDocumentIntakeWorkbench.Api.Data;
 using AiDocumentIntakeWorkbench.Api.Intake;
+using AiDocumentIntakeWorkbench.Api.Review;
 using AiDocumentIntakeWorkbench.Api.SampleDocuments;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ builder.Services.AddSingleton<ISampleDocumentCatalog, InMemorySampleDocumentCata
 builder.Services.AddSingleton<IDocumentAiProcessor, DeterministicMockDocumentAiProcessor>();
 builder.Services.AddScoped<IntakeDocumentService>();
 builder.Services.AddScoped<AiProcessingService>();
+builder.Services.AddScoped<ReviewWorkflowService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalFrontend", policy =>
@@ -44,5 +46,6 @@ app.MapSampleDocumentEndpoints();
 app.MapIntakeDocumentEndpoints();
 app.MapAiProcessingEndpoints();
 app.MapReviewQueueEndpoints();
+app.MapReviewWorkflowEndpoints();
 
 app.Run();

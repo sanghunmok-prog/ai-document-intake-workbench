@@ -24,8 +24,16 @@ public sealed class ExtractedDocumentFieldConfiguration : IEntityTypeConfigurati
             .HasPrecision(5, 4)
             .IsRequired();
 
+        builder.Property(field => field.ReviewedValue)
+            .HasMaxLength(1000);
+
+        builder.Property(field => field.ReviewedBy)
+            .HasMaxLength(128);
+
         builder.Property(field => field.CreatedUtc)
             .IsRequired();
+
+        builder.Property(field => field.ReviewedUtc);
 
         builder.HasIndex(field => field.DocumentProcessingResultId);
 

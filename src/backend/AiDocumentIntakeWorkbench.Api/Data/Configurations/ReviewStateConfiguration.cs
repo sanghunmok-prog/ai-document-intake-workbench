@@ -15,6 +15,15 @@ public sealed class ReviewStateConfiguration : IEntityTypeConfiguration<ReviewSt
         builder.Property(reviewState => reviewState.RequiresHumanReview)
             .IsRequired();
 
+        builder.Property(reviewState => reviewState.Decision)
+            .HasConversion<string>()
+            .HasMaxLength(32);
+
+        builder.Property(reviewState => reviewState.DecidedBy)
+            .HasMaxLength(128);
+
+        builder.Property(reviewState => reviewState.DecidedUtc);
+
         builder.Property(reviewState => reviewState.CreatedUtc)
             .IsRequired();
 

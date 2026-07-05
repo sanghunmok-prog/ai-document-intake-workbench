@@ -4,6 +4,7 @@ using AiDocumentIntakeWorkbench.Api.Api;
 using AiDocumentIntakeWorkbench.Api.Data;
 using AiDocumentIntakeWorkbench.Api.Domain;
 using AiDocumentIntakeWorkbench.Api.Intake;
+using AiDocumentIntakeWorkbench.Api.Review;
 using AiDocumentIntakeWorkbench.Api.SampleDocuments;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -186,6 +187,30 @@ public sealed class ReviewQueueEndpointsTests
         Assert.Equal(originalAuditEventCount, await context.AuditEvents.CountAsync());
         Assert.Equal(originalFieldCount, await context.ExtractedDocumentFields.CountAsync());
         Assert.Equal(originalFlagCount, await context.ValidationFlags.CountAsync());
+    }
+
+    [Fact]
+    public async Task GetDetailAsync_FinalizedReview_ReturnsReviewedValuesAndDecision()
+    {
+        using var context = CreateContext();
+        var document = await CreateProcessedDocumentAsync(context, SampleDocumentIds.CleanHighConfidence);
+        var reviewWorkflowService = new ReviewWorkflowService(context);
+        await reviewWorkflowService.UpdateFieldsAsync(
+            document.Id,
+            [new ReviewerFieldUpdate("InvoiceNumber", "INV-10482-CORRECTED")]);
+        await reviewWorkflowService.RecordDecisionAsync(document.Id, "Approved");
+
+        var detail = await GetDetailValueAsync(context, document.Id);
+
+        Assert.Equal(WorkflowStatus.Approved.ToString(), detail.WorkflowStatus);
+        Assert.Equal(ReviewerDecision.Approved.ToString(), detail.ReviewState?.Decision);
+        Assert.Contains(
+            detail.ExtractedFields,
+            field => field.Name == "InvoiceNumber"
+                && field.Value == "INV-10482"
+                && field.ReviewedValue == "INV-10482-CORRECTED");
+        Assert.Contains(detail.AuditEvents, auditEvent => auditEvent.EventType == "ReviewerFieldEdited");
+        Assert.Contains(detail.AuditEvents, auditEvent => auditEvent.EventType == "ReviewerDecisionRecorded");
     }
 
     private static async Task<IntakeDocument> CreateProcessedDocumentAsync(
