@@ -43,5 +43,6 @@ app.MapGet("/health", () =>
 app.MapSampleDocumentEndpoints();
 app.MapIntakeDocumentEndpoints();
 app.MapAiProcessingEndpoints();
+app.MapReviewQueueEndpoints();
 
 app.Run();
