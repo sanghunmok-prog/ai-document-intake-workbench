@@ -1,6 +1,6 @@
 <main class="app-shell">
   <header class="topbar">
-    <div>
+    <div class="brand-block">
       <p class="eyebrow">Workflow intake</p>
       <h1>{{ appName }}</h1>
     </div>
@@ -13,12 +13,12 @@
   </header>
 
   @if (activeView() === 'overview') {
-    <section class="overview" aria-labelledby="overview-title">
-      <div class="intro">
-        <p class="eyebrow">Workflow shell</p>
-        <h2 id="overview-title">Intake and review queue</h2>
+    <section class="page overview" aria-labelledby="overview-title">
+      <div class="page-title">
+        <p class="eyebrow">Document review workflow</p>
+        <h2 id="overview-title">Structured AI assistance with human final review</h2>
         <p class="summary">
-          Select a local business document sample and view AI-processed, review-ready items in a focused queue.
+          Intake sample documents, process deterministic structured output, surface backend validation flags, and keep the reviewer decision and audit trail visible.
         </p>
         <div class="action-row">
           <button type="button" class="primary-action" (click)="showIntake()">Open Sample Intake</button>
@@ -26,38 +26,69 @@
         </div>
       </div>
 
-      <section class="status-grid" aria-label="Current shell status">
-        <div>
-          <span class="label">Backend</span>
-          <strong>ASP.NET Core API</strong>
-        </div>
-        <div>
-          <span class="label">Frontend</span>
-          <strong>Angular workflow shell</strong>
-        </div>
-        <div>
-          <span class="label">AI</span>
-          <strong>Structured mock processing</strong>
-        </div>
+      <ol class="workflow-steps" aria-label="Workflow sequence">
+        <li>
+          <span class="step-index">1</span>
+          <strong>Intake</strong>
+          <small>Persist a local sample document.</small>
+        </li>
+        <li>
+          <span class="step-index">2</span>
+          <strong>Mock AI Processing</strong>
+          <small>Classify and extract structured fields.</small>
+        </li>
+        <li>
+          <span class="step-index">3</span>
+          <strong>Validation Flags</strong>
+          <small>Backend rules identify review concerns.</small>
+        </li>
+        <li>
+          <span class="step-index">4</span>
+          <strong>Human Review</strong>
+          <small>Reviewer inspects evidence and edits fields.</small>
+        </li>
+        <li>
+          <span class="step-index">5</span>
+          <strong>Decision + Audit</strong>
+          <small>Final decision and history stay traceable.</small>
+        </li>
+      </ol>
+
+      <section class="value-grid" aria-label="What this app demonstrates">
+        <article>
+          <span class="chip">Structured AI Output</span>
+          <p>Document type, extracted fields, confidence, routing, and rationale are presented as review evidence.</p>
+        </article>
+        <article>
+          <span class="chip">Backend Validation</span>
+          <p>Missing fields, low confidence, and inconsistent values are displayed as reviewer-facing flags.</p>
+        </article>
+        <article>
+          <span class="chip">Human Final Decision</span>
+          <p>The reviewer edits field values and chooses the final outcome from the detail screen.</p>
+        </article>
+        <article>
+          <span class="chip">Audit History</span>
+          <p>Workflow activity is shown as an event timeline for review and demo traceability.</p>
+        </article>
       </section>
     </section>
   }
 
   @if (activeView() === 'intake') {
-    <section class="workspace" aria-labelledby="intake-title">
+    <section class="page workspace" aria-labelledby="intake-title">
       <div class="workspace-header">
         <div>
           <p class="eyebrow">Sample catalog</p>
           <h2 id="intake-title">Document Intake</h2>
+          <p class="page-description">Create persisted intake records from the three sample scenarios used by the review workflow.</p>
         </div>
         <button type="button" class="secondary-action" (click)="refreshIntake()">Refresh</button>
       </div>
 
       @if (sampleError()) {
         <p class="notice error">{{ sampleError() }}</p>
-      }
-
-      @if (samplesLoading()) {
+      } @else if (samplesLoading()) {
         <p class="notice">Loading sample documents...</p>
       } @else if (sampleDocuments().length === 0) {
         <p class="notice">No sample documents are available.</p>
@@ -65,16 +96,22 @@
         <section class="sample-list" aria-label="Sample documents">
           @for (sample of sampleDocuments(); track sample.id) {
             <article class="sample-card">
-              <div>
-                <span class="sample-id">{{ sample.id }}</span>
+              <div class="sample-card-body">
+                <div class="sample-card-header">
+                  <span class="sample-id">{{ formatDisplayLabel(sample.id) }}</span>
+                  <span class="chip attention-chip">{{ sampleDemonstrationLabel(sample) }}</span>
+                </div>
                 <h3>{{ sample.title }}</h3>
-                <p class="scenario">{{ sample.scenario }}</p>
-                <p>{{ sample.summary }}</p>
-                <p class="preview">{{ sample.contentPreview }}</p>
+                <p class="scenario">{{ formatDisplayLabel(sample.scenario) }}</p>
+                <p class="card-copy">{{ sample.summary }}</p>
+                <div class="source-preview">
+                  <span class="label">Source Preview</span>
+                  <p>{{ sample.contentPreview }}</p>
+                </div>
               </div>
               <button
                 type="button"
-                class="primary-action"
+                class="primary-action full-width"
                 [disabled]="creatingSampleId() !== null"
                 (click)="createIntakeDocument(sample)">
                 {{ creatingSampleId() === sample.id ? 'Creating...' : 'Create Intake' }}
@@ -89,37 +126,41 @@
           <span class="label">Created Intake</span>
           <strong>{{ createdDocument()?.displayName }}</strong>
           <p>ID: {{ createdDocument()?.id }}</p>
-          <p>Status: {{ createdDocument()?.status }}</p>
+          <p>Status: <span class="status-pill">{{ formatDisplayLabel(createdDocument()?.status) }}</span></p>
         </section>
       }
 
-      <section class="intake-list" aria-labelledby="persisted-intake-title">
+      <section class="section-panel" aria-labelledby="persisted-intake-title">
         <div class="section-heading">
-          <h3 id="persisted-intake-title">Persisted Intake Documents</h3>
+          <div>
+            <p class="eyebrow">Persisted records</p>
+            <h3 id="persisted-intake-title">Intake Documents</h3>
+          </div>
         </div>
 
         @if (intakeError()) {
           <p class="notice error">{{ intakeError() }}</p>
-        }
-
-        @if (intakeLoading()) {
+        } @else if (intakeLoading()) {
           <p class="notice">Loading persisted intake documents...</p>
         } @else if (intakeDocuments().length === 0) {
           <p class="notice">No intake documents have been created.</p>
         } @else {
-          <div class="document-table" role="table" aria-label="Persisted intake documents">
+          <div class="document-table intake-table" role="table" aria-label="Persisted intake documents">
             <div class="table-row table-head" role="row">
               <span role="columnheader">Document</span>
-              <span role="columnheader">Sample</span>
+              <span role="columnheader">Sample Scenario</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Created</span>
             </div>
             @for (document of intakeDocuments(); track document.id) {
               <div class="table-row" role="row">
-                <span role="cell">{{ document.displayName }}</span>
-                <span role="cell">{{ document.sampleDocumentId ?? 'Local sample' }}</span>
-                <span role="cell" class="status-pill">{{ document.status }}</span>
-                <span role="cell">{{ document.createdUtc | date:'short' }}</span>
+                <span role="cell" class="cell-stack">
+                  <strong>{{ document.displayName }}</strong>
+                  <small>{{ document.id }}</small>
+                </span>
+                <span role="cell">{{ sampleContextLabel(document.sampleDocumentId, document.scenario) }}</span>
+                <span role="cell"><span class="status-pill">{{ formatDisplayLabel(document.status) }}</span></span>
+                <span role="cell" class="nowrap">{{ document.createdUtc | date:'short' }}</span>
               </div>
             }
           </div>
@@ -129,24 +170,34 @@
   }
 
   @if (activeView() === 'reviewQueue') {
-    <section class="workspace" aria-labelledby="queue-title">
+    <section class="page workspace" aria-labelledby="queue-title">
       <div class="workspace-header">
         <div>
           <p class="eyebrow">Human review</p>
           <h2 id="queue-title">Review Queue</h2>
+          <p class="page-description">Triage AI-processed intake documents by status, classification, confidence, and validation flags.</p>
         </div>
         <button type="button" class="secondary-action" (click)="refreshReviewQueue()">Refresh</button>
       </div>
 
       @if (reviewQueueError()) {
         <p class="notice error">{{ reviewQueueError() }}</p>
-      }
-
-      @if (reviewQueueLoading()) {
+      } @else if (reviewQueueLoading()) {
         <p class="notice">Loading review queue...</p>
       } @else if (reviewQueueItems().length === 0) {
         <p class="notice">No AI-processed intake documents are awaiting human review.</p>
       } @else {
+        <section class="worklist-summary" aria-label="Queue summary">
+          <div>
+            <span class="label">Work Items</span>
+            <strong>{{ reviewQueueItems().length }}</strong>
+          </div>
+          <div>
+            <span class="label">Needs Attention</span>
+            <strong>{{ attentionItemCount() }}</strong>
+          </div>
+        </section>
+
         <div class="document-table queue-table" role="table" aria-label="Review queue">
           <div class="table-row table-head" role="row">
             <span role="columnheader">Document</span>
@@ -159,28 +210,28 @@
           </div>
           @for (item of reviewQueueItems(); track item.intakeDocumentId) {
             <div class="table-row queue-row" [class.needs-attention]="queueItemNeedsAttention(item)" role="row">
-              <span role="cell" class="cell-stack">
+              <span role="cell" class="cell-stack document-cell">
                 <strong>{{ item.displayName }}</strong>
-                <small>{{ item.sampleDocumentId ?? item.scenario ?? 'Processed intake document' }}</small>
+                <small>{{ sampleContextLabel(item.sampleDocumentId, item.scenario) }}</small>
               </span>
+              <span role="cell"><span class="status-pill">{{ formatDisplayLabel(item.workflowStatus) }}</span></span>
+              <span role="cell">{{ formatDisplayLabel(item.documentType) }}</span>
               <span role="cell">
-                <span class="status-pill">{{ item.workflowStatus }}</span>
-              </span>
-              <span role="cell">{{ item.documentType }}</span>
-              <span role="cell" class="confidence-value" [class.low-confidence]="item.overallConfidence < 0.75">
-                {{ formatConfidence(item.overallConfidence) }}
+                <span class="confidence-pill" [class.low-confidence-pill]="item.overallConfidence < 0.75">
+                  {{ formatConfidence(item.overallConfidence) }}
+                </span>
               </span>
               <span role="cell" class="cell-stack">
                 <span class="flag-pill" [class.attention]="item.validationFlagCount > 0">
-                  {{ item.validationFlagCount }} {{ item.validationFlagCount === 1 ? 'flag' : 'flags' }}
+                  {{ flagCountLabel(item.validationFlagCount) }}
                 </span>
                 @if (item.highestSeverity) {
-                  <small>{{ item.highestSeverity }} severity</small>
+                  <small>{{ formatDisplayLabel(item.highestSeverity) }} severity</small>
                 }
               </span>
-              <span role="cell">{{ item.updatedUtc | date:'short' }}</span>
-              <span role="cell">
-                <button type="button" class="secondary-action compact-action" (click)="openReviewDetail(item)">Open</button>
+              <span role="cell" class="nowrap">{{ item.updatedUtc | date:'short' }}</span>
+              <span role="cell" class="row-action-cell">
+                <button type="button" class="secondary-action compact-action open-detail-action" (click)="openReviewDetail(item)">Open</button>
               </span>
             </div>
           }
@@ -190,11 +241,12 @@
   }
 
   @if (activeView() === 'reviewDetail') {
-    <section class="workspace" aria-labelledby="detail-title">
+    <section class="page workspace" aria-labelledby="detail-title">
       <div class="workspace-header">
         <div>
-          <p class="eyebrow">Read-only inspection</p>
+          <p class="eyebrow">Human review workflow</p>
           <h2 id="detail-title">Review Detail</h2>
+          <p class="page-description">Inspect source context, structured AI output, validation flags, reviewer edits, final decision, and audit history.</p>
         </div>
         <div class="action-row">
           <button type="button" class="secondary-action" (click)="backToReviewQueue()">Back to Queue</button>
@@ -211,26 +263,42 @@
       } @else if (reviewDetailNotFound()) {
         <p class="notice error">Review queue item was not found.</p>
       } @else if (reviewDetail(); as detail) {
-        <section class="status-grid detail-summary" aria-label="Review detail summary">
+        <section class="detail-summary" aria-label="Review detail summary">
           <div>
             <span class="label">Document</span>
             <strong>{{ detail.displayName }}</strong>
           </div>
           <div>
             <span class="label">Status</span>
-            <strong>{{ detail.workflowStatus }}</strong>
+            <strong><span class="status-pill">{{ formatDisplayLabel(detail.workflowStatus) }}</span></strong>
           </div>
           <div>
             <span class="label">Classification</span>
-            <strong>{{ detail.documentType }}</strong>
+            <strong>{{ formatDisplayLabel(detail.documentType) }}</strong>
           </div>
           <div>
             <span class="label">Confidence</span>
-            <strong>{{ formatConfidence(detail.overallConfidence) }}</strong>
+            <strong>
+              <span class="confidence-pill" [class.low-confidence-pill]="detail.overallConfidence < 0.75">
+                {{ formatConfidence(detail.overallConfidence) }}
+              </span>
+            </strong>
           </div>
           <div>
             <span class="label">Decision</span>
-            <strong>{{ detail.reviewState?.decision ?? 'Pending' }}</strong>
+            <strong>{{ formatDisplayLabel(detail.reviewState?.decision, 'Pending') }}</strong>
+          </div>
+          <div>
+            <span class="label">Flags</span>
+            <strong>{{ flagCountLabel(detail.validationFlags.length) }}</strong>
+          </div>
+          <div>
+            <span class="label">Review Required</span>
+            <strong>{{ reviewRequirementLabel(detail) }}</strong>
+          </div>
+          <div>
+            <span class="label">Suggested Routing</span>
+            <strong>{{ formatDisplayLabel(detail.suggestedRouting, 'Not suggested') }}</strong>
           </div>
         </section>
 
@@ -239,55 +307,114 @@
         }
 
         @if (reviewActionMessage()) {
-          <p class="notice">{{ reviewActionMessage() }}</p>
+          <p class="notice success">{{ reviewActionMessage() }}</p>
         }
 
         @if (isFinalReview(detail)) {
           <p class="notice">Review is finalized. Field edits and decision controls are disabled.</p>
         }
 
-        <section class="detail-grid">
-          <article class="detail-panel">
-            <h3>Source Context</h3>
-            <dl class="meta-list">
-              <div>
-                <dt>Sample</dt>
-                <dd>{{ detail.sampleDocumentId ?? detail.scenario ?? 'Local sample' }}</dd>
-              </div>
-              <div>
-                <dt>Created</dt>
-                <dd>{{ detail.createdUtc | date:'short' }}</dd>
-              </div>
-              <div>
-                <dt>Updated</dt>
-                <dd>{{ detail.updatedUtc | date:'short' }}</dd>
-              </div>
-              <div>
-                <dt>Human Review</dt>
-                <dd>{{ detail.reviewState?.decision ?? (detail.reviewState?.requiresHumanReview ? 'Required' : 'Not recorded') }}</dd>
-              </div>
-            </dl>
-            <p class="preview">{{ detail.summary ?? 'No document summary is available.' }}</p>
+        <section class="detail-section" aria-labelledby="source-context-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Document evidence</p>
+              <h3 id="source-context-title">Source Context</h3>
+            </div>
+          </div>
+          <dl class="meta-grid">
+            <div>
+              <dt>Sample</dt>
+              <dd>{{ sampleContextLabel(detail.sampleDocumentId, detail.scenario) }}</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{{ detail.createdUtc | date:'short' }}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{{ detail.updatedUtc | date:'short' }}</dd>
+            </div>
+            <div>
+              <dt>Human Review</dt>
+              <dd>{{ humanReviewLabel(detail) }}</dd>
+            </div>
+          </dl>
+          <div class="source-copy">
+            <span class="label">Summary</span>
+            <p>{{ detail.summary ?? 'No document summary is available.' }}</p>
+          </div>
+          <div class="source-copy">
+            <span class="label">Document Text</span>
             <pre class="text-block">{{ detail.documentText ?? 'No source document text is available.' }}</pre>
-          </article>
-
-          <article class="detail-panel">
-            <h3>AI Summary</h3>
-            <dl class="meta-list">
-              <div>
-                <dt>Suggested Routing</dt>
-                <dd>{{ detail.suggestedRouting }}</dd>
-              </div>
-              <div>
-                <dt>Rationale</dt>
-                <dd>{{ detail.rationale }}</dd>
-              </div>
-            </dl>
-          </article>
+          </div>
         </section>
 
-        <section class="intake-list" aria-labelledby="fields-title">
-          <h3 id="fields-title">Extracted Fields</h3>
+        <section class="detail-section" aria-labelledby="ai-assessment-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Structured output</p>
+              <h3 id="ai-assessment-title">AI Assessment</h3>
+            </div>
+          </div>
+          <dl class="meta-grid">
+            <div>
+              <dt>Document Type</dt>
+              <dd>{{ formatDisplayLabel(detail.documentType) }}</dd>
+            </div>
+            <div>
+              <dt>Confidence</dt>
+              <dd>
+                <span class="confidence-pill" [class.low-confidence-pill]="detail.overallConfidence < 0.75">
+                  {{ formatConfidence(detail.overallConfidence) }}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Suggested Routing</dt>
+              <dd>{{ formatDisplayLabel(detail.suggestedRouting, 'Not suggested') }}</dd>
+            </div>
+          </dl>
+          <div class="source-copy">
+            <span class="label">Rationale</span>
+            <p>{{ detail.rationale || 'No AI rationale is available.' }}</p>
+          </div>
+        </section>
+
+        <section class="detail-section" aria-labelledby="flags-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Backend validation</p>
+              <h3 id="flags-title">Validation Flags</h3>
+            </div>
+          </div>
+          @if (detail.validationFlags.length === 0) {
+            <p class="notice">No validation flags are recorded.</p>
+          } @else {
+            <div class="flag-list" aria-label="Validation flags">
+              @for (flag of detail.validationFlags; track flag.message + flag.createdUtc) {
+                <article class="flag-card">
+                  <div class="flag-card-header">
+                    <strong>{{ formatDisplayLabel(flag.flagType) }}</strong>
+                    <span class="flag-pill attention">{{ formatDisplayLabel(flag.severity) }}</span>
+                  </div>
+                  <p>{{ flag.message }}</p>
+                  <div class="flag-meta">
+                    <span>Field: {{ formatDisplayLabel(flag.fieldName, 'Document') }}</span>
+                    <span>{{ flag.createdUtc | date:'short' }}</span>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="detail-section" aria-labelledby="fields-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Human review workspace</p>
+              <h3 id="fields-title">Extracted Fields / Reviewer Edits</h3>
+            </div>
+          </div>
           @if (detail.extractedFields.length === 0) {
             <p class="notice">No extracted fields are available.</p>
           } @else {
@@ -299,17 +426,26 @@
                 <span role="columnheader">Reviewed Value</span>
               </div>
               @for (field of detail.extractedFields; track field.name) {
-                <div class="table-row" role="row">
-                  <span role="cell">{{ field.name }}</span>
-                  <span role="cell">{{ field.value || 'Not provided' }}</span>
-                  <span role="cell" [class.low-confidence]="field.confidence < 0.75">{{ formatConfidence(field.confidence) }}</span>
-                  <span role="cell" class="cell-stack">
+                <div class="table-row" [class.edited-row]="fieldWasEdited(field)" role="row">
+                  <span role="cell" class="field-name-cell">
+                    <strong>{{ formatDisplayLabel(field.name) }}</strong>
+                    @if (fieldWasEdited(field)) {
+                      <small class="edited-marker">Edited</small>
+                    }
+                  </span>
+                  <span role="cell" class="ai-value-cell">{{ field.value || 'Not provided' }}</span>
+                  <span role="cell">
+                    <span class="confidence-pill" [class.low-confidence-pill]="field.confidence < 0.75">
+                      {{ formatConfidence(field.confidence) }}
+                    </span>
+                  </span>
+                  <span role="cell" class="cell-stack reviewed-cell">
                     <input
                       type="text"
                       [value]="reviewFieldValue(field)"
                       [disabled]="isFinalReview(detail) || reviewFieldsSaving() || reviewDecisionSaving()"
                       (input)="updateReviewedFieldValue(field.name, $any($event.target).value)"
-                      [attr.aria-label]="'Reviewed value for ' + field.name" />
+                      [attr.aria-label]="'Reviewed value for ' + formatDisplayLabel(field.name)" />
                     @if (field.reviewedUtc) {
                       <small>Saved {{ field.reviewedUtc | date:'short' }}</small>
                     }
@@ -319,7 +455,7 @@
             </div>
 
             @if (!isFinalReview(detail)) {
-              <div class="action-row">
+              <div class="section-actions">
                 <button
                   type="button"
                   class="primary-action"
@@ -332,17 +468,23 @@
           }
         </section>
 
-        <section class="intake-list" aria-labelledby="decision-title">
-          <h3 id="decision-title">Reviewer Decision</h3>
+        <section class="detail-section decision-section" aria-labelledby="decision-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Final control</p>
+              <h3 id="decision-title">Reviewer Decision</h3>
+            </div>
+          </div>
           @if (isFinalReview(detail)) {
-            <p class="notice">
-              Final decision: {{ detail.reviewState?.decision ?? detail.workflowStatus }}
+            <p class="notice final-decision">
+              Final decision: {{ formatDisplayLabel(detail.reviewState?.decision ?? detail.workflowStatus) }}
               @if (detail.reviewState?.decidedUtc) {
                 <span>at {{ detail.reviewState?.decidedUtc | date:'short' }}</span>
               }
             </p>
           } @else {
-            <div class="action-row">
+            <p class="section-note">The human reviewer records the final workflow decision after reviewing source context, AI assessment, field edits, and validation flags.</p>
+            <div class="action-row decision-actions">
               <button
                 type="button"
                 class="primary-action"
@@ -352,55 +494,40 @@
               </button>
               <button
                 type="button"
-                [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
-                (click)="recordReviewerDecision(detail, 'Rejected')">
-                Reject
-              </button>
-              <button
-                type="button"
+                class="secondary-action"
                 [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
                 (click)="recordReviewerDecision(detail, 'NeedsCorrection')">
                 Needs Correction
               </button>
+              <button
+                type="button"
+                class="danger-action"
+                [disabled]="reviewFieldsSaving() || reviewDecisionSaving()"
+                (click)="recordReviewerDecision(detail, 'Rejected')">
+                Reject
+              </button>
             </div>
           }
         </section>
 
-        <section class="intake-list" aria-labelledby="flags-title">
-          <h3 id="flags-title">Validation Flags</h3>
-          @if (detail.validationFlags.length === 0) {
-            <p class="notice">No validation flags are recorded.</p>
-          } @else {
-            <div class="document-table flags-table" role="table" aria-label="Validation flags">
-              <div class="table-row table-head" role="row">
-                <span role="columnheader">Type</span>
-                <span role="columnheader">Severity</span>
-                <span role="columnheader">Field</span>
-                <span role="columnheader">Message</span>
-              </div>
-              @for (flag of detail.validationFlags; track flag.message) {
-                <div class="table-row queue-row needs-attention" role="row">
-                  <span role="cell">{{ flag.flagType }}</span>
-                  <span role="cell"><span class="flag-pill attention">{{ flag.severity }}</span></span>
-                  <span role="cell">{{ flag.fieldName ?? 'Document' }}</span>
-                  <span role="cell">{{ flag.message }}</span>
-                </div>
-              }
+        <section class="detail-section" aria-labelledby="audit-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Traceability</p>
+              <h3 id="audit-title">Audit History</h3>
             </div>
-          }
-        </section>
-
-        <section class="intake-list" aria-labelledby="audit-title">
-          <h3 id="audit-title">Audit History</h3>
+          </div>
           @if (detail.auditEvents.length === 0) {
             <p class="notice">No audit events are recorded.</p>
           } @else {
-            <ol class="audit-list">
+            <ol class="audit-timeline">
               @for (event of detail.auditEvents; track event.createdUtc + event.eventType) {
                 <li>
-                  <span class="label">{{ event.eventType }}</span>
-                  <p>{{ event.message }}</p>
-                  <small>{{ event.createdUtc | date:'short' }}</small>
+                  <div>
+                    <strong>{{ auditEventLabel(event.eventType) }}</strong>
+                    <p>{{ event.message }}</p>
+                  </div>
+                  <time>{{ event.createdUtc | date:'short' }}</time>
                 </li>
               }
             </ol>

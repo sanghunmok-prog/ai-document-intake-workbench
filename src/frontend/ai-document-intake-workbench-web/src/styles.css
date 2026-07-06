@@ -1,1 +1,141 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f6f7f9;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflow-steps li,
+.value-grid article {
+  min-width: 0;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.workflow-steps li {
+  padding: 1rem;
+  box-shadow: inset 0 3px 0 #1f6f7d;
+}
+
+.workflow-steps strong,
+.workflow-steps small {
+  display: block;
+}
+
+.workflow-steps small {
+  margin-top: 0.4rem;
+  color: #617080;
+  line-height: 1.45;
+}
+
+.step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.65rem;
+  border-radius: 999px;
+  color: #0f4d58;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: #d9eef0;
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.value-grid article {
+  padding: 1rem;
+}
+
+.value-grid p {
+  margin: 0;
+  color: #3f4d5b;
+  line-height: 1.5;
+}
+
+.audit-timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.audit-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0 0 1rem 1.35rem;
+  border-left: 2px solid #d7e0e8;
+}
+
+.audit-timeline li:last-child {
+  padding-bottom: 0;
+}
+
+.audit-timeline li::before {
+  position: absolute;
+  top: 0.2rem;
+  left: -0.42rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #1f6f7d;
+  content: "";
+}
+
+.audit-timeline p {
+  margin: 0.2rem 0 0;
+  color: #3f4d5b;
+  line-height: 1.45;
+}
+
+.audit-timeline time {
+  color: #667686;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1080px) {
+  .workflow-steps,
+  .value-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .workflow-steps,
+  .value-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-timeline li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

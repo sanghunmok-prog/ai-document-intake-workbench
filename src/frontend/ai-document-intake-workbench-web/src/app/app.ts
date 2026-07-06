@@ -109,6 +109,60 @@ export class App implements OnInit {
     return `${Math.round(confidence * 100)}%`;
   }
 
+  protected formatDisplayLabel(value: string | null | undefined, fallback = 'Not recorded'): string {
+    if (!value || value.trim().length === 0) {
+      return fallback;
+    }
+
+    const words = value
+      .trim()
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/[-_]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (words.length === 0) {
+      return fallback;
+    }
+
+    return words.map(word => this.formatDisplayWord(word)).join(' ');
+  }
+
+  protected sampleDemonstrationLabel(sample: SampleDocument): string {
+    const descriptor = `${sample.id} ${sample.scenario}`.toLowerCase();
+
+    if (descriptor.includes('missing') || descriptor.includes('low-confidence')) {
+      return 'Missing Required Field';
+    }
+
+    if (descriptor.includes('conflicting') || descriptor.includes('inconsistent')) {
+      return 'Inconsistent Totals';
+    }
+
+    if (descriptor.includes('clean')) {
+      return 'Clean Extraction';
+    }
+
+    return this.formatDisplayLabel(sample.scenario, 'Scenario');
+  }
+
+  protected sampleContextLabel(sampleDocumentId: string | null, scenario: string | null): string {
+    if (scenario) {
+      return this.formatDisplayLabel(scenario);
+    }
+
+    return this.formatDisplayLabel(sampleDocumentId, 'Local sample');
+  }
+
+  protected flagCountLabel(count: number): string {
+    return `${count} ${count === 1 ? 'validation flag' : 'validation flags'}`;
+  }
+
+  protected attentionItemCount(): number {
+    return this.reviewQueueItems().filter(item => this.queueItemNeedsAttention(item)).length;
+  }
+
   protected queueItemNeedsAttention(item: ReviewQueueItem): boolean {
     return item.validationFlagCount > 0 || item.overallConfidence < 0.75;
   }
@@ -116,6 +170,44 @@ export class App implements OnInit {
   protected isFinalReview(detail: ReviewDetail): boolean {
     return Boolean(detail.reviewState?.decision)
       || ['Approved', 'Rejected', 'NeedsCorrection', 'Closed'].includes(detail.workflowStatus);
+  }
+
+  protected humanReviewLabel(detail: ReviewDetail): string {
+    if (detail.reviewState?.decision) {
+      return this.formatDisplayLabel(detail.reviewState.decision);
+    }
+
+    if (detail.reviewState?.requiresHumanReview) {
+      return 'Required';
+    }
+
+    return 'Not recorded';
+  }
+
+  protected reviewRequirementLabel(detail: ReviewDetail): string {
+    if (!detail.reviewState) {
+      return 'Not recorded';
+    }
+
+    return detail.reviewState.requiresHumanReview ? 'Required' : 'Not Required';
+  }
+
+  protected auditEventLabel(eventType: string): string {
+    const auditEventLabels: Record<string, string> = {
+      SampleDocumentSelected: 'Sample Document Selected',
+      AiProcessingCompleted: 'AI Processing Completed',
+      ValidationFlagsCreated: 'Validation Flags Created',
+      WorkflowStatusChanged: 'Workflow Status Changed',
+      ReviewerFieldEdited: 'Reviewer Field Edited',
+      ReviewerDecisionRecorded: 'Reviewer Decision Recorded'
+    };
+
+    return auditEventLabels[eventType] ?? this.formatDisplayLabel(eventType);
+  }
+
+  protected fieldWasEdited(field: ExtractedFieldDetail): boolean {
+    return field.reviewedValue !== null
+      && field.reviewedValue.trim() !== field.value.trim();
   }
 
   protected updateReviewedFieldValue(fieldName: string, value: string): void {
@@ -192,7 +284,7 @@ export class App implements OnInit {
         decision
       }));
       await this.loadReviewDetail(detail.intakeDocumentId);
-      this.reviewActionMessage.set(`Reviewer decision '${decision}' was recorded.`);
+      this.reviewActionMessage.set(`Reviewer decision "${this.formatDisplayLabel(decision)}" was recorded.`);
     } catch (error) {
       this.reviewActionError.set(this.describeError(error, 'Reviewer decision could not be recorded.'));
     } finally {
@@ -283,5 +375,20 @@ export class App implements OnInit {
 
   private currentReviewedValue(field: ExtractedFieldDetail): string {
     return (field.reviewedValue ?? field.value).trim();
+  }
+
+  private formatDisplayWord(word: string): string {
+    const normalized = word.toLowerCase();
+    const acronyms = new Set(['ai', 'api', 'id', 'url', 'utc']);
+
+    if (acronyms.has(normalized)) {
+      return normalized.toUpperCase();
+    }
+
+    if (word.length > 1 && word === word.toUpperCase()) {
+      return word;
+    }
+
+    return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
   }
 }
