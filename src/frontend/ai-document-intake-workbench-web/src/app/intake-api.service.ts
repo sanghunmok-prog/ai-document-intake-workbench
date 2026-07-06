@@ -104,6 +104,30 @@ export interface ReviewWorkflowResponse {
   editedFieldCount: number;
 }
 
+export interface ProcessedIntakeDocumentSummary {
+  intakeDocumentId: string;
+  workflowStatus: string;
+  documentType: string;
+  overallConfidence: number;
+  extractedFields: ProcessedFieldSummary[];
+  validationFlags: ProcessedValidationFlagSummary[];
+  suggestedRouting: string;
+  rationale: string;
+}
+
+export interface ProcessedFieldSummary {
+  name: string;
+  value: string;
+  confidence: number;
+}
+
+export interface ProcessedValidationFlagSummary {
+  flagType: string;
+  severity: string;
+  fieldName: string | null;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -138,6 +162,12 @@ export class IntakeApiService {
     return this.http.post<ReviewWorkflowResponse>(
       `${this.apiBaseUrl}/api/intake-documents/${intakeDocumentId}/review/decision`,
       request);
+  }
+
+  processIntakeDocument(intakeDocumentId: string) {
+    return this.http.post<ProcessedIntakeDocumentSummary>(
+      `${this.apiBaseUrl}/api/intake-documents/${intakeDocumentId}/process-ai`,
+      {});
   }
 
   createIntakeDocumentFromSample(sampleDocumentId: string) {

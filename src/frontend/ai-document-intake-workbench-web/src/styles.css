@@ -13,6 +13,21 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.document-table.intake-table .table-row {
+  grid-template-columns: minmax(14rem, 1.35fr) minmax(10rem, 1fr) minmax(7.25rem, 0.65fr) minmax(8.5rem, 0.7fr) minmax(7rem, 0.55fr);
+}
+
+.document-table.intake-table .table-head span:last-child,
+.document-table.intake-table .row-action-cell {
+  justify-self: start;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.document-table.intake-table .row-action-cell .compact-action {
+  min-width: 6rem;
+}
+
 .workflow-steps {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -129,9 +144,14 @@ body {
 }
 
 @media (max-width: 920px) {
+  .document-table.intake-table .table-row,
   .workflow-steps,
   .value-grid {
     grid-template-columns: 1fr;
+  }
+
+  .document-table.intake-table .row-action-cell {
+    justify-self: stretch;
   }
 
   .audit-timeline li {

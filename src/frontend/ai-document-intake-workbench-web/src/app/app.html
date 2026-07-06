@@ -121,12 +121,61 @@
         </section>
       }
 
-      @if (createdDocument()) {
+      @if (createdDocument(); as created) {
         <section class="created-result" aria-label="Created intake document">
           <span class="label">Created Intake</span>
-          <strong>{{ createdDocument()?.displayName }}</strong>
-          <p>ID: {{ createdDocument()?.id }}</p>
-          <p>Status: <span class="status-pill">{{ formatDisplayLabel(createdDocument()?.status) }}</span></p>
+          <strong>{{ created.displayName }}</strong>
+          <p>ID: {{ created.id }}</p>
+          <p>Status: <span class="status-pill">{{ formatDisplayLabel(created.status) }}</span></p>
+          <div class="action-row">
+            @if (isProcessableIntakeDocument(created)) {
+              <button
+                type="button"
+                class="primary-action"
+                [disabled]="processingDocumentId() !== null"
+                (click)="processIntakeDocument(created)">
+                {{ processingDocumentId() === created.id ? 'Processing...' : 'Process with Mock AI' }}
+              </button>
+            } @else {
+              <span class="status-pill">{{ intakeProcessHint(created) }}</span>
+            }
+          </div>
+        </section>
+      }
+
+      @if (processingError()) {
+        <p class="notice error">{{ processingError() }}</p>
+      }
+
+      @if (processingMessage()) {
+        <p class="notice success">{{ processingMessage() }}</p>
+      }
+
+      @if (processingResult(); as result) {
+        <section class="created-result" aria-label="Processing result">
+          <span class="label">Processing Result</span>
+          <strong>{{ formatDisplayLabel(result.workflowStatus) }}</strong>
+          <dl class="meta-grid">
+            <div>
+              <dt>Classification</dt>
+              <dd>{{ formatDisplayLabel(result.documentType) }}</dd>
+            </div>
+            <div>
+              <dt>Confidence</dt>
+              <dd>{{ formatConfidence(result.overallConfidence) }}</dd>
+            </div>
+            <div>
+              <dt>Validation Flags</dt>
+              <dd>{{ flagCountLabel(result.validationFlags.length) }}</dd>
+            </div>
+            <div>
+              <dt>Suggested Routing</dt>
+              <dd>{{ formatDisplayLabel(result.suggestedRouting, 'Not suggested') }}</dd>
+            </div>
+          </dl>
+          <div class="action-row">
+            <button type="button" class="secondary-action" (click)="showReviewQueue()">Open Review Queue</button>
+          </div>
         </section>
       }
 
@@ -151,6 +200,7 @@
               <span role="columnheader">Sample Scenario</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Created</span>
+              <span role="columnheader">Action</span>
             </div>
             @for (document of intakeDocuments(); track document.id) {
               <div class="table-row" role="row">
@@ -161,6 +211,19 @@
                 <span role="cell">{{ sampleContextLabel(document.sampleDocumentId, document.scenario) }}</span>
                 <span role="cell"><span class="status-pill">{{ formatDisplayLabel(document.status) }}</span></span>
                 <span role="cell" class="nowrap">{{ document.createdUtc | date:'short' }}</span>
+                <span role="cell" class="row-action-cell">
+                  @if (isProcessableIntakeDocument(document)) {
+                    <button
+                      type="button"
+                      class="secondary-action compact-action"
+                      [disabled]="processingDocumentId() !== null"
+                      (click)="processIntakeDocument(document)">
+                      {{ processingDocumentId() === document.id ? 'Processing...' : 'Process AI' }}
+                    </button>
+                  } @else {
+                    <span class="status-pill">{{ intakeProcessHint(document) }}</span>
+                  }
+                </span>
               </div>
             }
           </div>

@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { ExtractedFieldDetail, IntakeApiService, IntakeDocument, ReviewDetail, ReviewQueueItem, SampleDocument } from './intake-api.service';
+import { ExtractedFieldDetail, IntakeApiService, IntakeDocument, ProcessedIntakeDocumentSummary, ReviewDetail, ReviewQueueItem, SampleDocument } from './intake-api.service';
 
 type AppView = 'overview' | 'intake' | 'reviewQueue' | 'reviewDetail';
 type ReviewerDecisionValue = 'Approved' | 'Rejected' | 'NeedsCorrection';
@@ -30,8 +30,12 @@ export class App implements OnInit {
   protected readonly reviewFieldsSaving = signal(false);
   protected readonly reviewDecisionSaving = signal(false);
   protected readonly creatingSampleId = signal<string | null>(null);
+  protected readonly processingDocumentId = signal<string | null>(null);
+  protected readonly processingResult = signal<ProcessedIntakeDocumentSummary | null>(null);
   protected readonly sampleError = signal<string | null>(null);
   protected readonly intakeError = signal<string | null>(null);
+  protected readonly processingError = signal<string | null>(null);
+  protected readonly processingMessage = signal<string | null>(null);
   protected readonly reviewQueueError = signal<string | null>(null);
   protected readonly reviewDetailError = signal<string | null>(null);
   protected readonly reviewActionError = signal<string | null>(null);
@@ -93,6 +97,9 @@ export class App implements OnInit {
   protected async createIntakeDocument(sample: SampleDocument): Promise<void> {
     this.creatingSampleId.set(sample.id);
     this.intakeError.set(null);
+    this.processingError.set(null);
+    this.processingMessage.set(null);
+    this.processingResult.set(null);
 
     try {
       const created = await firstValueFrom(this.intakeApi.createIntakeDocumentFromSample(sample.id));
@@ -102,6 +109,53 @@ export class App implements OnInit {
       this.intakeError.set(this.describeError(error, 'Intake document could not be created.'));
     } finally {
       this.creatingSampleId.set(null);
+    }
+  }
+
+  protected isProcessableIntakeDocument(document: IntakeDocument | null | undefined): boolean {
+    return document?.status === 'Received';
+  }
+
+  protected intakeProcessHint(document: IntakeDocument): string {
+    switch (document.status) {
+      case 'AwaitingReview':
+        return 'In Review';
+      case 'Approved':
+      case 'Rejected':
+      case 'NeedsCorrection':
+      case 'Closed':
+        return 'Finalized';
+      case 'Processing':
+        return 'Processing';
+      default:
+        return 'Already Processed';
+    }
+  }
+
+  protected async processIntakeDocument(document: IntakeDocument): Promise<void> {
+    if (!this.isProcessableIntakeDocument(document) || this.processingDocumentId() !== null) {
+      return;
+    }
+
+    this.processingDocumentId.set(document.id);
+    this.processingError.set(null);
+    this.processingMessage.set(null);
+    this.processingResult.set(null);
+    this.intakeError.set(null);
+    this.reviewQueueError.set(null);
+
+    try {
+      const result = await firstValueFrom(this.intakeApi.processIntakeDocument(document.id));
+      this.processingResult.set(result);
+      this.processingMessage.set(`${document.displayName} was processed and is ready for review.`);
+
+      await this.loadIntakeDocuments();
+      this.refreshCreatedDocument(document.id);
+      await this.loadReviewQueue();
+    } catch (error) {
+      this.processingError.set(this.describeError(error, 'Intake document could not be processed.'));
+    } finally {
+      this.processingDocumentId.set(null);
     }
   }
 
@@ -375,6 +429,21 @@ export class App implements OnInit {
 
   private currentReviewedValue(field: ExtractedFieldDetail): string {
     return (field.reviewedValue ?? field.value).trim();
+  }
+
+  private refreshCreatedDocument(processedDocumentId: string): void {
+    const created = this.createdDocument();
+
+    if (created?.id !== processedDocumentId) {
+      return;
+    }
+
+    const updatedDocument = this.intakeDocuments()
+      .find(document => document.id === processedDocumentId);
+
+    if (updatedDocument) {
+      this.createdDocument.set(updatedDocument);
+    }
   }
 
   private formatDisplayWord(word: string): string {
