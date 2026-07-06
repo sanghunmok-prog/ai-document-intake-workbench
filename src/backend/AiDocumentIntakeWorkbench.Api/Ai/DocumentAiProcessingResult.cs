@@ -3,7 +3,10 @@ namespace AiDocumentIntakeWorkbench.Api.Ai;
 public enum DocumentAiProcessingError
 {
     MissingSampleDocumentId,
-    UnsupportedSampleDocument
+    UnsupportedSampleDocument,
+    ProviderConfiguration,
+    ProviderFailure,
+    InvalidStructuredOutput
 }
 
 public sealed record DocumentAiProcessingResult(

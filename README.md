@@ -69,6 +69,20 @@ The `/health` endpoint does not require a database connection.
 
 The sample catalog endpoint does not require database records, but creating and listing intake documents requires the configured SQL Server database to be available and migrated.
 
+## Optional OpenAI Provider
+
+Mock AI mode remains the default, and the local demo works without an OpenAI key. OpenAI mode is optional and should be enabled only through local environment configuration or .NET user secrets.
+
+Use `AiProvider:Mode` with `OpenAI`, plus `OpenAI:ApiKey` and `OpenAI:Model`. Do not commit secrets.
+
+```bash
+dotnet user-secrets set "AiProvider:Mode" "OpenAI" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+dotnet user-secrets set "OpenAI:ApiKey" "<your-openai-api-key>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+dotnet user-secrets set "OpenAI:Model" "<model-name>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+```
+
+The provider returns structured classification and extraction output only. Backend validation, workflow status changes, audit writing, and final reviewer decisions remain application-owned.
+
 ## Intended Workflow
 
 The planned MVP will route inbound business documents through a structured workflow:
