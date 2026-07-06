@@ -100,7 +100,7 @@ public sealed class ReviewWorkflowService(WorkbenchDbContext dbContext)
         string? decision,
         CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<ReviewerDecision>(decision, ignoreCase: true, out var parsedDecision))
+        if (!TryParseReviewerDecision(decision, out var parsedDecision))
         {
             return ReviewWorkflowResult.Failure(
                 ReviewWorkflowError.InvalidDecision,
@@ -268,6 +268,23 @@ public sealed class ReviewWorkflowService(WorkbenchDbContext dbContext)
             or WorkflowStatus.Rejected
             or WorkflowStatus.NeedsCorrection
             or WorkflowStatus.Closed;
+    }
+
+    private static bool TryParseReviewerDecision(string? decision, out ReviewerDecision parsedDecision)
+    {
+        parsedDecision = default;
+
+        if (string.IsNullOrWhiteSpace(decision))
+        {
+            return false;
+        }
+
+        var normalizedDecision = decision.Trim();
+        var isNamedDecision = Enum.GetNames<ReviewerDecision>()
+            .Any(name => string.Equals(name, normalizedDecision, StringComparison.OrdinalIgnoreCase));
+
+        return isNamedDecision
+            && Enum.TryParse(normalizedDecision, ignoreCase: true, out parsedDecision);
     }
 }
 
