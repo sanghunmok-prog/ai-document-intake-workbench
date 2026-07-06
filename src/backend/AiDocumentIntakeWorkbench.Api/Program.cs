@@ -15,7 +15,7 @@ builder.Services.AddDbContext<WorkbenchDbContext>(options =>
     options.UseSqlServer(WorkbenchDbContext.ResolveConnectionString(workbenchDbConnectionString));
 });
 builder.Services.AddSingleton<ISampleDocumentCatalog, InMemorySampleDocumentCatalog>();
-builder.Services.AddSingleton<IDocumentAiProcessor, DeterministicMockDocumentAiProcessor>();
+builder.Services.AddDocumentAiProcessor(builder.Configuration);
 builder.Services.AddScoped<IntakeDocumentService>();
 builder.Services.AddScoped<AiProcessingService>();
 builder.Services.AddScoped<ReviewWorkflowService>();
