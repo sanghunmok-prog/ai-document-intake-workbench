@@ -134,14 +134,38 @@ Validation expectations: Mock-mode tests remain deterministic, provider mode is 
 
 Stop condition: Optional provider support exists without changing the structured assistive AI boundary.
 
-## PR11 - Demo Polish And README Instructions
+## PR11 - UI Readability Polish
 
-Goal: Polish the local demo path and public setup documentation.
+Goal: Improve Angular UI readability and workflow presentation.
 
-Scope: Update README run instructions, demo flow notes, seed/sample guidance, and final validation checklist.
+Scope: Polish Overview, Sample Intake, Review Queue, and Review Detail presentation without changing app behavior.
 
-Explicitly out of scope: New MVP features, architecture expansion, autonomous behavior, and external infrastructure.
+Explicitly out of scope: Backend behavior changes, API changes, new product features, new dependencies, and final README/demo documentation polish.
 
-Validation expectations: Full documented local setup and smoke-test path works from a clean checkout.
+Validation expectations: Backend and frontend builds/tests pass, and existing workflow screens remain functional with improved readability.
 
-Stop condition: The project has a clear public demo path and remains within accepted MVP scope.
+Stop condition: Existing workflow screens are easier to scan and demo without expanding MVP scope.
+
+## PR12 - UI Process Action For Intake Documents
+
+Goal: Complete the UI click-through path by exposing the existing AI processing action from Angular.
+
+Scope: Add a frontend process action for processable intake documents using the existing backend process endpoint.
+
+Explicitly out of scope: Backend behavior changes, API changes, new routes/pages, workflow rule changes, and dependency changes.
+
+Validation expectations: Backend and frontend builds/tests pass, and the UI path works from Sample Intake to Review Queue and Review Detail.
+
+Stop condition: Users can create an intake document, process it with mock AI, and continue through review from the UI.
+
+## PR13 - Final README And Demo Instructions Polish
+
+Goal: Make the public repository demo-ready with final README and validation instructions.
+
+Scope: Update public documentation for setup, configuration, mock-mode demo, optional provider notes, limitations, and final validation.
+
+Explicitly out of scope: Source code changes, dependency changes, deployment files, generated media, and new product behavior.
+
+Validation expectations: Documentation-only changes, full backend/frontend validation commands pass, and public-safety checks find no secrets or private content.
+
+Stop condition: README clearly explains how to understand, run, test, and demo the completed MVP.

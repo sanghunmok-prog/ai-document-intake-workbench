@@ -1,104 +1,245 @@
 # AI Document Intake Workbench
 
-AI Document Intake Workbench is a planned full-stack workflow application for AI-assisted document intake, triage, validation, human review, and auditability.
+AI Document Intake Workbench is a full-stack AI-assisted workflow application for sample document intake, structured AI processing, backend validation, validation flags, human review queue and detail screens, reviewer field edits, final reviewer decisions, workflow status tracking, and audit history. AI is assistive: it produces structured classification, extracted fields, confidence, routing, and rationale, while backend validation and human review control final outcomes.
+
+## What This Project Demonstrates
+
+- ASP.NET Core Web API backend.
+- Angular workflow UI.
+- SQL Server persistence with EF Core.
+- REST APIs for intake, processing, review, decision, and audit workflow screens.
+- Deterministic mock AI by default.
+- Optional OpenAI provider behind an AI service abstraction.
+- Structured AI output for document type, extracted fields, confidence, routing, and rationale.
+- Backend validation and reviewer-facing validation flags.
+- Review queue and review detail workflow.
+- Reviewer field edits and final decisions.
+- Audit trail and workflow traceability.
+- Local demo without external AI keys.
 
 ## Current Status
 
-PR03 adds local sample document intake without AI processing. Users can select a sample business document, persist it as an intake document, and view its initial workflow status.
+The MVP workflow is implemented. The default local demo uses deterministic mock AI, so local setup, automated tests, and the main click-through demo do not require external AI keys.
 
-## Planned Stack
+Optional OpenAI provider support is available only when explicitly configured. Live OpenAI provider testing is not required for the documented local demo, and this README does not claim live provider testing or production readiness.
+
+## Tech Stack
 
 - ASP.NET Core Web API
-- Angular
+- C#
+- EF Core
 - SQL Server
-- Entity Framework Core
+- Angular
+- TypeScript
 - REST APIs
+- Deterministic mock AI
+- Optional OpenAI provider
 
-## Local Shell Development
+## Repository Layout
 
-Prerequisites:
+- `AiDocumentIntakeWorkbench.sln` - solution file.
+- `src/backend/AiDocumentIntakeWorkbench.Api` - ASP.NET Core Web API backend.
+- `tests/backend/AiDocumentIntakeWorkbench.Api.Tests` - backend test project.
+- `src/frontend/ai-document-intake-workbench-web` - Angular frontend.
+- `docs` - public project specification, roadmap, and testing notes.
 
-- .NET SDK
-- Node.js and npm
+## Prerequisites
 
-Restore and build the backend solution:
+- WSL/Linux shell.
+- Git.
+- .NET 10 SDK, matching the current `net10.0` backend projects.
+- Node.js and npm compatible with the Angular 21 frontend.
+- Docker Desktop or another local SQL Server option.
+- No external AI key is required for mock mode.
+
+## Configuration
+
+The backend reads configuration from standard ASP.NET Core configuration sources, including environment variables and user secrets.
+
+Common settings:
+
+- `ConnectionStrings__WorkbenchDb` - SQL Server connection string.
+- `AiProvider__Mode=Mock` - default local demo mode.
+- `AiProvider__Mode=OpenAI` - optional live provider mode.
+- `OpenAI__ApiKey`: `<your-api-key>`
+- `OpenAI__Model`: `<model-name>`
+
+Do not commit real secrets. Optional OpenAI mode may incur API costs if enabled. Provider output still goes through backend validation and human review.
+
+## Local Database Setup And Reset
+
+The backend uses SQL Server through the `ConnectionStrings:WorkbenchDb` configuration key. The committed configuration is public-safe and does not include credentials.
+
+Start a local SQL Server container:
 
 ```bash
-dotnet restore ./AiDocumentIntakeWorkbench.sln
-dotnet build ./AiDocumentIntakeWorkbench.sln --no-restore
+read -rsp "SQL Server SA password: " SQL_SERVER_SA_PASSWORD
+echo
+
+docker run --name ai-workbench-sql \
+  -e ACCEPT_EULA=Y \
+  -e MSSQL_SA_PASSWORD="$SQL_SERVER_SA_PASSWORD" \
+  -p 1433:1433 \
+  -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Run the backend API shell:
+Set the backend connection string in the current shell:
+
+```bash
+SQL_CONNECTION_PREFIX="Server=localhost,1433;Database=AiDocumentIntakeWorkbench;User Id=sa;Pass"
+export ConnectionStrings__WorkbenchDb="${SQL_CONNECTION_PREFIX}word=${SQL_SERVER_SA_PASSWORD};Encrypt=True;TrustServerCertificate=True"
+```
+
+Apply EF Core migrations from the repository root:
+
+```bash
+dotnet ef database update \
+  --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj \
+  --startup-project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+```
+
+Optional cleanup/reset:
+
+```bash
+docker stop ai-workbench-sql
+docker rm ai-workbench-sql
+```
+
+Then rerun the container and database update commands.
+
+## Run Backend
+
+From the repository root:
 
 ```bash
 dotnet run --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj --launch-profile http
 ```
 
-The health endpoint is available at `http://localhost:5080/health` when the `http` launch profile is running.
+The backend console prints the active local URL. With the current `http` launch profile, the API listens on `http://localhost:5080`.
 
-Install, build, and run the frontend shell:
+Health check:
+
+```bash
+curl http://localhost:5080/health
+```
+
+## Run Frontend
+
+From the repository root:
+
+```bash
+cd src/frontend/ai-document-intake-workbench-web
+npm install
+npm start
+```
+
+The Angular development server runs at `http://localhost:4200/` by default.
+
+## Build And Test
+
+Backend:
+
+```bash
+dotnet restore ./AiDocumentIntakeWorkbench.sln
+dotnet build ./AiDocumentIntakeWorkbench.sln --no-restore
+dotnet test ./AiDocumentIntakeWorkbench.sln --no-build
+```
+
+Frontend:
 
 ```bash
 cd src/frontend/ai-document-intake-workbench-web
 npm install
 npm run build
-npm start
 ```
 
-The frontend development server is available at `http://localhost:4200/` by default.
+No `npm test` script is currently configured. Automated tests do not require OpenAI API keys.
 
-The frontend includes a sample intake screen. AI processing, validation, review, and audit history UI will be added in later PRs.
+## Sample Scenarios
 
-## Local Database Configuration
+- `clean-high-confidence` - clean, high-confidence structured extraction.
+- `missing-low-confidence` - missing required field and low-confidence extraction.
+- `conflicting-inconsistent` - conflicting or inconsistent totals/data.
 
-The backend uses the `ConnectionStrings:WorkbenchDb` configuration key for SQL Server. The committed value is a public-safe local placeholder without credentials.
+These samples are deterministic in mock mode so the local demo and tests are repeatable.
 
-Supply a real local connection string through environment configuration or .NET user secrets:
+## 60-90 Second Click-Through Demo
 
-```bash
-dotnet user-secrets set "ConnectionStrings:WorkbenchDb" "<your-local-sql-server-connection-string>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
-```
+1. Start SQL Server and apply migrations.
+2. Start the backend API.
+3. Start the Angular frontend.
+4. Open `http://localhost:4200/`.
+5. Open **Sample Intake**.
+6. Create a `clean-high-confidence` intake document.
+7. Click **Process with Mock AI**.
+8. Show the processing result: classification, confidence, validation flags, and suggested routing.
+9. Click **Open Review Queue**.
+10. Open the review detail screen from the queue.
+11. Show source context, AI assessment, extracted fields, validation flags, and audit history.
+12. Edit one reviewed field.
+13. Approve the item.
+14. Show final status and audit events.
 
-After configuring SQL Server locally, apply migrations with:
-
-```bash
-dotnet ef database update --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj --startup-project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
-```
-
-The `/health` endpoint does not require a database connection.
-
-The sample catalog endpoint does not require database records, but creating and listing intake documents requires the configured SQL Server database to be available and migrated.
+The `missing-low-confidence` and `conflicting-inconsistent` samples demonstrate validation flags and human review routing concerns.
 
 ## Optional OpenAI Provider
 
-Mock AI mode remains the default, and the local demo works without an OpenAI key. OpenAI mode is optional and should be enabled only through local environment configuration or .NET user secrets.
+The optional OpenAI provider is configuration-gated. The validated local demo path uses deterministic mock AI and does not require external API keys.
 
-Use `AiProvider:Mode` with `OpenAI`, plus `OpenAI:ApiKey` and `OpenAI:Model`. Do not commit secrets.
+Mock mode:
 
 ```bash
-dotnet user-secrets set "AiProvider:Mode" "OpenAI" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
-dotnet user-secrets set "OpenAI:ApiKey" "<your-openai-api-key>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
-dotnet user-secrets set "OpenAI:Model" "<model-name>" --project ./src/backend/AiDocumentIntakeWorkbench.Api/AiDocumentIntakeWorkbench.Api.csproj
+export AiProvider__Mode=Mock
 ```
 
-The provider returns structured classification and extraction output only. Backend validation, workflow status changes, audit writing, and final reviewer decisions remain application-owned.
+Optional OpenAI mode:
 
-## Intended Workflow
+```bash
+export AiProvider__Mode=OpenAI
+export OpenAI__Model="<model-name>"
+export OpenAI__ApiKey
+read -rsp "OpenAI API key: " OpenAI__ApiKey
+echo
+```
 
-The planned MVP will route inbound business documents through a structured workflow:
+Optional live provider use may incur API costs. Live provider output is still structured, validated by the backend, routed to human review, and subject to final reviewer decision. The documented demo path uses mock AI.
 
-1. Intake a sample document.
-2. Run AI-assisted classification and structured field extraction.
-3. Validate extracted data on the backend.
-4. Surface validation flags for human review.
-5. Let a reviewer inspect, edit, and decide the final outcome.
-6. Record workflow status changes and audit history.
+## Known Limitations
 
-AI is intended to be assistive and workflow-oriented. Human review remains the final decision step.
+- Local demo app, not production-ready.
+- Lightweight workflow without full auth.
+- Sample documents only.
+- No file upload or OCR.
+- No broad document-management system.
+- No chatbot or RAG workflow.
+- Optional provider is not required for the mock demo.
+- No cloud deployment infrastructure.
+- No external integrations.
 
-## Out Of Scope
+## Explicitly Out Of Scope
 
-This project is not a chatbot, ChatGPT clone, chat with PDFs tool, broad RAG knowledge base, OCR platform, full document-management system, full claims or case-management system, multi-agent automation system, model training or fine-tuning project, vector database project, cloud infrastructure project, Kubernetes deployment, microservices architecture, external integration platform, or autonomous approval and rejection system.
+- Chatbot.
+- ChatGPT clone.
+- Chat with PDFs.
+- Broad RAG.
+- OCR platform.
+- Full document-management system.
+- Full claims or case-management system.
+- Autonomous approvals or rejections.
+- Model training or fine-tuning.
+- Vector database.
+- Cloud, Kubernetes, or microservices.
+- External integrations.
+
+## Final Validation Checklist
+
+- Backend restore/build/test passes.
+- Frontend install/build passes.
+- Database migrations apply locally.
+- Mock-mode click-through demo works from Sample Intake through Audit History.
+- No secrets are committed.
+- No scope creep beyond the documented workflow.
+- No live provider is required for local demo or automated tests.
 
 ## Public Documentation
 

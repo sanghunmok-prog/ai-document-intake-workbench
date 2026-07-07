@@ -46,6 +46,19 @@ Mock AI tests should cover:
 
 After each implementation PR, manually verify the main workflow path introduced by that PR. Include loading, error, and empty states when a UI exists, and confirm local runs do not require external AI keys unless an optional provider mode is explicitly enabled.
 
+## Final MVP Validation
+
+Use mock AI as the default local validation path. A final local check should cover:
+
+- Create a sample intake document from the Angular Sample Intake page.
+- Process it with deterministic mock AI from the UI.
+- Confirm the persisted intake document moves into the review-ready workflow state.
+- Open the Review Queue and then Review Detail.
+- Confirm source context, AI assessment, extracted fields, validation flags, reviewer decision controls, and audit history are visible.
+- Save a reviewed field edit and record a final reviewer decision.
+
+Automated tests and the documented local demo do not require OpenAI API keys. Optional live provider testing, when explicitly configured, should remain manual and should still verify backend validation and human review behavior.
+
 ## General Safety Checks
 
 - No hardcoded secrets.
