@@ -2,6 +2,13 @@
 
 AI Document Intake Workbench is a full-stack AI-assisted workflow application for sample document intake, structured AI processing, backend validation, validation flags, human review queue and detail screens, reviewer field edits, final reviewer decisions, workflow status tracking, and audit history. AI is assistive: it produces structured classification, extracted fields, confidence, routing, and rationale, while backend validation and human review control final outcomes.
 
+## Demo Preview
+
+![AI Document Intake Workbench demo](docs/media/ai-document-intake-workbench-hero.gif)
+
+**Full demo video:** [Watch the release walkthrough](https://github.com/sanghunmok-prog/ai-document-intake-workbench/releases/latest)
+
+
 ## What This Project Demonstrates
 
 - ASP.NET Core Web API backend.
@@ -162,6 +169,11 @@ No `npm test` script is currently configured. Automated tests do not require Ope
 - `conflicting-inconsistent` - conflicting or inconsistent totals/data.
 
 These samples are deterministic in mock mode so the local demo and tests are repeatable.
+
+### Validation Flags Preview
+
+![Validation flags demo](docs/media/ai-document-intake-validation-flags.gif)
+
 
 ## 60-90 Second Click-Through Demo
 
